@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>아이콘 생성기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>PWA 아이콘 생성기</h1>
+    <p>아이콘을 생성한 후 다운로드하여 프로젝트 루트에 저장하세요.</p>
+    
+    <canvas id="icon192" width="192" height="192"></canvas>
+    <canvas id="icon512" width="512" height="512"></canvas>
+    
+    <br>
+    <button onclick="generateIcons()">아이콘 생성</button>
+    <button onclick="downloadIcon(192)">192x192 다운로드</button>
+    <button onclick="downloadIcon(512)">512x512 다운로드</button>
+
+    <script>
+        function generateIcons() {
+            const sizes = [192, 512];
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`icon${size}`);
+                const ctx = canvas.getContext('2d');
+                
+                // 배경색
+                ctx.fillStyle = '#fbe9e7';
+                ctx.fillRect(0, 0, size, size);
+                
+                // 윷놀이 보드 패턴 그리기
+                ctx.strokeStyle = '#5d4037';
+                ctx.lineWidth = size / 50;
+                
+                // 대각선
+                ctx.beginPath();
+                ctx.moveTo(size * 0.1, size * 0.1);
+                ctx.lineTo(size * 0.9, size * 0.9);
+                ctx.moveTo(size * 0.9, size * 0.1);
+                ctx.lineTo(size * 0.1, size * 0.9);
+                ctx.stroke();
+                
+                // 사각형
+                ctx.beginPath();
+                ctx.rect(size * 0.1, size * 0.1, size * 0.8, size * 0.8);
+                ctx.stroke();
+                
+                // 중앙 원
+                ctx.fillStyle = '#deb887';
+                ctx.beginPath();
+                ctx.arc(size * 0.5, size * 0.5, size * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 텍스트
+                ctx.fillStyle = '#5d4037';
+                ctx.font = `bold ${size / 6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('윷', size * 0.5, size * 0.5);
+            });
+        }
+        
+        function downloadIcon(size) {
+            const canvas = document.getElementById(`icon${size}`);
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // 페이지 로드 시 자동 생성
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>
+
