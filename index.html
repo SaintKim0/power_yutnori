@@ -638,7 +638,6 @@
 
         let gameMode = 'multi';
         let aiTimeoutId = null;
-        let aiMoveTimeoutId = null; // AI 이동 전용 타이머 분리
         const aiActionDelay = 1200;
 
         // --- 2. 초기화 및 설정 로직 ---
@@ -842,48 +841,82 @@
             }, 700);
         }
 
+        function getStepsToFinish(token) {
+            if (token.finished) return 0;
+            let steps = 0;
+            let sim = { index: token.index, location: token.location, finished: token.finished };
+            // 최대 30칸까지만 시뮬레이션 (무한루프 방지)
+            while (!sim.finished && steps < 30) {
+                sim = simulateMove(sim, 1);
+                steps++;
+            }
+            return steps;
+        }
+
+        function enemyCaptureThreat(snapshot) {
+            let threat = 0;
+            teams.forEach((team, tIdx) => {
+                if (tIdx === gameState.currentTeamIdx) return;
+                team.tokens.forEach(enemy => {
+                    if (enemy.finished || enemy.index === 0) return;
+                    // 상대방이 1~5칸 이동해서 나를 잡을 확률 계산
+                    [1,2,3,4,5].forEach(steps => {
+                        const enemyPreview = simulateMove(enemy, steps);
+                        if (enemyPreview.invalidMove) return;
+                        if (enemyPreview.loc === snapshot.loc && enemyPreview.finalIdx === snapshot.finalIdx) {
+                            // 잡힐 위험이 있으면 큰 감점 (가까울수록 위험)
+                            threat += 300 - (steps * 20);
+                        }
+                    });
+                });
+            });
+            return Math.min(Math.max(threat, 0), 500);
+        }
+
         function evaluateAiMove(token, moveObj) {
             const preview = simulateMove(token, moveObj.score);
             if (preview.invalidMove) return { value: -Infinity, preview };
-            
-            // 1. 기본 점수: 이동 거리 및 완주 가중치
-            let value = preview.finalIdx * 5 + moveObj.score * 10;
-            
-            // 2. 잡기 점수 (매우 높음)
-            if (preview.catch) value += 1000;
-            
-            // 3. 완주 점수 (최우선)
-            if (preview.finished) value += 2500;
-            
-            // 4. 업기 점수 (전략적 유리함)
-            const currentTeam = teams[gameState.currentTeamIdx];
-            currentTeam.tokens.forEach(t => {
-                if (!t.finished && t !== token && t.index !== 0 &&
-                    t.index === preview.finalIdx && t.location === preview.loc) {
-                    value += 500; // 말을 업으면 가중치
-                }
+
+            const currentDist = getStepsToFinish(token);
+            const nextDist = getStepsToFinish({
+                index: preview.finalIdx,
+                location: preview.loc,
+                finished: preview.finished
             });
-            
-            // 5. 지름길 가중치
-            if (preview.loc === 'shortcut_1') value += 300;
-            if (preview.loc === 'shortcut_2') value += 350;
-            // 중앙 지점(23)은 shortcut_2 상태임
-            if (preview.finalIdx === 23) value += 150; 
-            
-            // 6. 패 자체 가중치
-            if (moveObj.score >= 4) value += 150;
-            if (moveObj.score === -1) value += 50; 
-            
-            // 7. 위험도 감점
-            const threat = enemyCaptureThreat(preview);
-            value -= threat * 1.5; 
-            
-            // 8. 미래 기대값
-            value += simulateFuturePotential(preview) * 0.5;
-            
-            // 9. 골인 지점 근처 보호
-            if (preview.loc === 'outer' && preview.finalIdx >= 17) value += 400;
-            
+
+            // 1. 전진 거리 점수 (전진할수록 좋음)
+            let value = (currentDist - nextDist) * 40;
+
+            // 2. 잡기 보너스 (매우 중요)
+            if (preview.catch) value += 800;
+
+            // 3. 완주 보너스 (중요)
+            if (preview.finished) value += 1000;
+
+            // 4. 지름길 진입 보너스
+            if (token.location === 'outer' && preview.loc.startsWith('shortcut')) {
+                value += 250;
+            }
+            // 5. 중앙(23번) 지름길 교차점 진입 보너스
+            if (token.location === 'shortcut_1' && preview.loc === 'shortcut_2') {
+                value += 150;
+            }
+
+            // 6. 업기 전략 (자기 말과 합쳐지기)
+            const currentTeam = teams[gameState.currentTeamIdx];
+            const isStacking = currentTeam.tokens.some(t => 
+                !t.finished && t !== token && t.index === preview.finalIdx && t.location === preview.loc
+            );
+            if (isStacking && preview.finalIdx !== 0) value += 120;
+
+            // 7. 위험도 감점 (상대방에게 잡힐 가능성)
+            if (!preview.finished) {
+                value -= enemyCaptureThreat(preview);
+            }
+
+            // 8. 윷/모 패 자체의 가치 (한 번 더 던질 수 있는 기회 비용)
+            if (moveObj.score >= 4) value += 100;
+
             return { value, preview };
         }
 
@@ -891,40 +924,35 @@
             const currentTeam = teams[gameState.currentTeamIdx];
             if (!currentTeam || !currentTeam.isAi) return;
             
-            if (gameState.moveQueue.length === 0) {
-                if (gameState.step === 'MOVE') nextTurn();
-                return;
-            }
+            if (gameState.moveQueue.length === 0) return;
 
-            let bestChoice = { moveId: null, tokenIdx: -1, value: -Infinity };
+            let bestChoice = { tokenIdx: -1, moveId: -1, value: -Infinity };
 
-            // 모든 패와 말 조합 시뮬레이션
-            gameState.moveQueue.forEach(moveObj => {
+            // 현재 가용한 모든 패와 모든 말을 조합하여 최적의 수 찾기
+            for (const move of gameState.moveQueue) {
                 currentTeam.tokens.forEach((token, idx) => {
                     if (token.finished) return;
-                    const evaluation = evaluateAiMove(token, moveObj);
-                    if (evaluation.value > bestChoice.value) {
-                        bestChoice = { moveId: moveObj.id, tokenIdx: idx, value: evaluation.value };
+
+                    const evaluation = evaluateAiMove(token, move);
+                    let finalValue = evaluation.value;
+
+                    // 이미 필드에 나가 있는 말을 우선적으로 움직이는 성향 (인간적 플레이)
+                    if (token.index === 0 && !evaluation.preview.catch && !evaluation.preview.finished) {
+                        finalValue -= 50; 
+                    }
+
+                    if (finalValue > bestChoice.value) {
+                        bestChoice = { tokenIdx: idx, moveId: move.id, value: finalValue };
                     }
                 });
-            });
-
-            // 유효한 이동이 하나도 없는 경우 (예: 백도만 있는데 모든 말이 시작점)
-            if (bestChoice.moveId === null) {
-                const firstMove = gameState.moveQueue[0];
-                executeMove(-1, firstMove.id);
-                return;
             }
 
-            // 1. 패 선택 시각화
-            selectMove(bestChoice.moveId);
-            
-            // 2. 전용 타이머를 사용하여 이동 실행 (다른 타이머에 의해 취소되지 않음)
-            if (aiMoveTimeoutId) clearTimeout(aiMoveTimeoutId);
-            aiMoveTimeoutId = setTimeout(() => {
+            if (bestChoice.tokenIdx === -1) {
+                // 움직일 수 있는 말이 전혀 없는 경우 (이론상 발생하기 어려움)
+                executeMove(-1, gameState.moveQueue[0].id);
+            } else {
                 executeMove(bestChoice.tokenIdx, bestChoice.moveId);
-                aiMoveTimeoutId = null;
-            }, 600);
+            }
         }
 
         function maybeTriggerAi() {
@@ -1242,8 +1270,6 @@
             };
 
             const moveIndex = gameState.moveQueue.findIndex(m => m.id === moveId);
-            if (moveIndex === -1) return; // 패를 찾을 수 없으면 중단 (중복 실행 방지)
-
             const score = gameState.moveQueue[moveIndex].score;
             gameState.moveQueue.splice(moveIndex, 1);
             gameState.selectedMoveId = null;
