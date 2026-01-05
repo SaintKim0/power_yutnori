@@ -864,6 +864,49 @@
         let direction = 1;
         let animId = null;
 
+        // AI 스킬 사용 판단 로직
+        function aiTryUseSkill() {
+            const currentTeam = teams[gameState.currentTeamIdx];
+            if (!currentTeam || !currentTeam.isAi || !isPowerUpMode || currentTeam.sp <= 0) return false;
+
+            // 1. 부스트 (2 SP) - 잡기, 완주, 또는 초반 빠른 진출을 위해 사용
+            if (currentTeam.sp >= 2) {
+                for (let i = 0; i < currentTeam.tokens.length; i++) {
+                    const t = currentTeam.tokens[i];
+                    if (!t.finished) {
+                        const preview = simulateMove(t, 2);
+                        // 잡기/완주가 가능하거나, 혹은 30% 확률로 초반 기선제압용 부스트
+                        if (preview.catch || preview.finished || (t.index === 0 && Math.random() < 0.3)) {
+                            setTimeout(() => executeSkill('boost', i), 600);
+                            return true; 
+                        }
+                    }
+                }
+            }
+
+            // 2. 방어막 (1 SP) - 내 말이 잡힐 위험이 클 때 사용
+            if (currentTeam.sp >= 1) {
+                const targetIdx = currentTeam.tokens.findIndex(t => 
+                    t.index > 0 && !t.finished && !t.shielded && enemyCaptureThreat({ loc: t.location, finalIdx: t.index }) > 100
+                );
+                if (targetIdx !== -1) {
+                    setTimeout(() => executeSkill('shield', targetIdx), 600);
+                    return true;
+                }
+            }
+
+            // 3. 재도전 (1 SP) - 패가 도/개/백도 뿐이고 SP가 여유 있을 때
+            if (currentTeam.sp >= 2 && gameState.step === 'MOVE' && gameState.moveQueue.length > 0) {
+                const hasOnlyBadMoves = gameState.moveQueue.every(m => m.score <= 2);
+                if (hasOnlyBadMoves) {
+                    setTimeout(() => executeSkill('reroll'), 600);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         function toggleThrow() {
             btnUndo.style.display = 'none';
             historyState = null;
@@ -1066,6 +1109,10 @@
                 clearTimeout(aiTimeoutId);
                 aiTimeoutId = null;
             }
+
+            // AI 스킬 사용 시도
+            if (aiTryUseSkill()) return;
+
             if (gameState.step === 'THROW') {
                 gaugeArea.style.display = 'none';
                 aiTimeoutId = setTimeout(performAiThrow, aiActionDelay);
@@ -1621,21 +1668,29 @@
 
         function updateTurnUI() {
             const currentTeam = teams[gameState.currentTeamIdx];
+            if (!currentTeam) return;
+
             const aiSuffix = currentTeam.isAi ? " (AI)" : "";
             turnIndicator.innerText = `${currentTeam.name}${aiSuffix} 차례`;
             turnIndicator.style.backgroundColor = currentTeam.color;
             actionBtn.style.backgroundColor = currentTeam.color;
 
-            // SP 업데이트 및 스킬 버튼 상태 제어
+            // SP 업데이트 및 스킬 버튼 상태 제어 (모든 팀 공통)
             if (isPowerUpMode) {
-                spDisplay.textContent = `SP: ${currentTeam.sp}`;
-                const canUseShield = currentTeam.sp >= 1 && currentTeam.tokens.some(t => t.index > 0 && !t.finished && !t.shielded);
-                const canUseReroll = currentTeam.sp >= 1 && gameState.step === 'MOVE' && gameState.moveQueue.length > 0;
-                const canUseBoost = currentTeam.sp >= 2 && currentTeam.tokens.some(t => t.index > 0 && !t.finished);
+                spDisplay.textContent = `SP: ${currentTeam.sp || 0}`;
+                spDisplay.style.display = 'inline';
+                skillArea.style.display = 'flex';
+
+                const canUseShield = (currentTeam.sp >= 1) && currentTeam.tokens.some(t => t.index > 0 && !t.finished && !t.shielded);
+                const canUseReroll = (currentTeam.sp >= 1) && (gameState.step === 'MOVE' && gameState.moveQueue.length > 0);
+                const canUseBoost = (currentTeam.sp >= 2) && currentTeam.tokens.some(t => !t.finished); // 출발점에서도 부스트 가능하도록 변경
                 
                 document.getElementById('skillShield').disabled = !canUseShield || currentTeam.isAi;
                 document.getElementById('skillReroll').disabled = !canUseReroll || currentTeam.isAi;
                 document.getElementById('skillBoost').disabled = !canUseBoost || currentTeam.isAi;
+            } else {
+                spDisplay.style.display = 'none';
+                skillArea.style.display = 'none';
             }
 
             if (currentTeam.isAi && gameState.step === 'THROW') {
@@ -1722,21 +1777,31 @@
         }
 
         function useSkill(type) {
+            executeSkill(type);
+        }
+
+        function executeSkill(type, targetTokenIdx = -1) {
             const currentTeam = teams[gameState.currentTeamIdx];
-            if (currentTeam.isAi) return;
+            if (!isPowerUpMode) return;
 
             if (type === 'shield') {
-                if (currentTeam.sp < 1) return alert("SP가 부족합니다!");
-                const target = currentTeam.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
-                if (!target) return alert("보호할 수 있는 말이 없습니다 (판 위에 있어야 함)");
+                if (currentTeam.sp < 1) return;
+                let target;
+                if (targetTokenIdx !== -1) {
+                    target = currentTeam.tokens[targetTokenIdx];
+                } else {
+                    target = currentTeam.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
+                }
+                
+                if (!target) return currentTeam.isAi ? null : alert("보호할 수 있는 말이 없습니다 (판 위에 있어야 함)");
                 
                 currentTeam.sp -= 1;
                 target.shielded = true;
                 showMessage(`${currentTeam.name} 팀: 🛡️ 방어막 사용!`, "#2e7d32");
             } 
             else if (type === 'reroll') {
-                if (gameState.step !== 'MOVE') return alert("패가 있을 때만 사용할 수 있습니다.");
-                if (currentTeam.sp < 1) return alert("SP가 부족합니다!");
+                if (gameState.step !== 'MOVE' || gameState.moveQueue.length === 0) return;
+                if (currentTeam.sp < 1) return;
                 
                 currentTeam.sp -= 1;
                 gameState.moveQueue = [];
@@ -1744,9 +1809,15 @@
                 showMessage(`${currentTeam.name} 팀: 🔄 재도전! 다시 던집니다.`, "#d84315");
             }
             else if (type === 'boost') {
-                if (currentTeam.sp < 2) return alert("SP가 부족합니다!");
-                const target = currentTeam.tokens.find(t => t.index > 0 && !t.finished);
-                if (!target) return alert("부스트를 사용할 말이 없습니다.");
+                if (currentTeam.sp < 2) return;
+                let target;
+                if (targetTokenIdx !== -1) {
+                    target = currentTeam.tokens[targetTokenIdx];
+                } else {
+                    target = currentTeam.tokens.find(t => !t.finished);
+                }
+                
+                if (!target) return currentTeam.isAi ? null : alert("부스트를 사용할 말이 없습니다.");
                 
                 currentTeam.sp -= 2;
                 const preview = simulateMove(target, 2);
