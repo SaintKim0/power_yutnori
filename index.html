@@ -631,6 +631,7 @@
 
         let gameMode = 'multi';
         let aiTimeoutId = null;
+        const aiActionDelay = 1200;
 
         // --- 2. 초기화 및 설정 로직 ---
         function renderTeamSetup() {
@@ -840,10 +841,14 @@
             if (!moveObj) return;
             let bestIdx = -1;
             let bestScore = -Infinity;
+            const captureCandidates = [];
             currentTeam.tokens.forEach((token, idx) => {
                 if (token.finished) return;
                 const preview = simulateMove(token, moveObj.score);
                 if (preview.invalidMove) return;
+                if (preview.catch) {
+                    captureCandidates.push({ idx, value: preview.finalIdx });
+                }
                 let score = preview.finalIdx + (preview.catch ? 200 : 0);
                 if (preview.finished) score += 1000;
                 if (score > bestScore) {
@@ -851,6 +856,11 @@
                     bestIdx = idx;
                 }
             });
+            if (moveObj.score >= 4 && captureCandidates.length > 0) {
+                captureCandidates.sort((a,b) => b.value - a.value);
+                executeMove(captureCandidates[0].idx, moveObj.id);
+                return;
+            }
             if (bestIdx === -1) {
                 executeMove(-1, moveObj.id);
             } else {
@@ -867,11 +877,11 @@
             }
             if (gameState.step === 'THROW') {
                 gaugeArea.style.display = 'none';
-                aiTimeoutId = setTimeout(performAiThrow, 600);
+                aiTimeoutId = setTimeout(performAiThrow, aiActionDelay);
             } else if (gameState.step === 'MOVE' && gameState.moveQueue.length > 0) {
                 aiTimeoutId = setTimeout(() => {
                     aiExecuteCurrentMove();
-                }, 600);
+                }, aiActionDelay);
             }
         }
 
