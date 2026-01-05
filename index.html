@@ -291,7 +291,8 @@
         /* 설정 인풋 스타일 */
         .input-group { margin: 15px 0; text-align: left; background: #f5f5f5; padding: 15px; border-radius: 12px; }
         .input-group label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font-size: 1rem;}
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box;}
+        .input-group input,
+        .input-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box;}
 
         /* 모달 (Modal) 스타일 */
         .modal-overlay {
@@ -365,7 +366,15 @@
             <ul id="teamList" style="list-style: none; padding: 0;">
                 <!-- JS로 팀 리스트 생성 -->
             </ul>
-            <button class="btn-secondary" style="width:100%" onclick="addTeam()">+ 팀 추가</button>
+            <button id="btnAddTeam" class="btn-secondary" style="width:100%" onclick="addTeam()">+ 팀 추가</button>
+        </div>
+
+        <div class="input-group">
+            <label for="modeSelect">플레이 모드</label>
+            <select id="modeSelect">
+                <option value="multi">멀티플레이 (다수 팀)</option>
+                <option value="ai">AI와 플레이 (혼자용)</option>
+            </select>
         </div>
         
         <button class="btn-primary" onclick="initGame()">게임 시작 ▶</button>
@@ -617,6 +626,11 @@
         const winModal = document.getElementById('winModal');
         const winTitle = document.getElementById('winTitle');
         const ruleModal = document.getElementById('ruleModal');
+        const modeSelect = document.getElementById('modeSelect');
+        const addTeamBtn = document.getElementById('btnAddTeam');
+
+        let gameMode = 'multi';
+        let aiTimeoutId = null;
 
         // --- 2. 초기화 및 설정 로직 ---
         function renderTeamSetup() {
@@ -625,6 +639,7 @@
                 teamList.innerHTML += `
                     <li style="margin:5px; color:${t.color}; font-weight:bold;">
                         ${t.name}
+                        ${t.isAi ? '<span style="font-size:0.75rem; margin-left:8px; color:#d32f2f;">(AI)</span>' : ''}
                         ${i > 1 ? `<button onclick="removeTeam(${i})" style="font-size:0.8rem; cursor:pointer; background:#999; color:white; border:none; padding:4px 8px; border-radius:4px; margin-left:10px;">삭제</button>` : ''}
                     </li>`;
             });
@@ -634,6 +649,8 @@
             addTeamData(0);
             addTeamData(1);
             renderTeamSetup();
+            modeSelect.value = gameMode;
+            addTeamBtn.disabled = (gameMode === 'ai');
             // 백도 표시 (마지막 윷가락)
             sticks[3].classList.add('back-do-mark');
         }
@@ -647,11 +664,16 @@
                 name: c.name, 
                 color: c.code, 
                 tokens: [],
-                remainingUndos: 2 
+                remainingUndos: 2,
+                isAi: false 
             });
         }
 
         function addTeam() {
+            if (gameMode === 'ai') {
+                alert("AI 모드에서는 팀을 추가할 수 없습니다.");
+                return;
+            }
             SoundEffect.playClick();
             if (teams.length >= 4) { alert("최대 4팀까지만 가능합니다."); return; }
             addTeamData(teams.length);
@@ -665,6 +687,15 @@
             renderTeamSetup();
         }
 
+        modeSelect.addEventListener('change', () => {
+            gameMode = modeSelect.value;
+            addTeamBtn.disabled = (gameMode === 'ai');
+            if (gameMode === 'ai' && teams.length > 2) {
+                teams = teams.slice(0, 2);
+                renderTeamSetup();
+            }
+        });
+
         function initGame() {
             SoundEffect.init(); // 오디오 컨텍스트 시작
             SoundEffect.playClick();
@@ -673,6 +704,26 @@
             tokensPerTeam = parseInt(tokenCountInput.value) || 2;
             
             gameState.maxUndos = maxVal;
+            const aiMode = modeSelect.value === 'ai';
+            gameMode = modeSelect.value;
+            gameState.isSinglePlayer = aiMode;
+            if (aiMode) {
+                if (teams.length > 2) teams = teams.slice(0, 2);
+                while (teams.length < 2) addTeamData(teams.length);
+                teams[0].isAi = false;
+                teams[0].name = TEAM_COLORS[0].name;
+                teams[0].color = TEAM_COLORS[0].code;
+                teams[1].isAi = true;
+                teams[1].name = "AI";
+                teams[1].color = TEAM_COLORS[1].code;
+                renderTeamSetup();
+            } else {
+                teams.forEach((t, i) => {
+                    t.isAi = false;
+                    t.name = TEAM_COLORS[i % TEAM_COLORS.length].name;
+                    t.color = TEAM_COLORS[i % TEAM_COLORS.length].code;
+                });
+            }
             
             // 팀별 설정 적용
             teams.forEach(t => {
@@ -692,7 +743,7 @@
             historyState = null;
             btnUndo.style.display = 'none';
             
-            gameInfo.innerText = `말 ${tokensPerTeam}개 / ${teams.length}팀`;
+            gameInfo.innerText = `말 ${tokensPerTeam}개 / ${teams.length}팀${gameMode === 'ai' ? ' · AI 모드' : ''}`;
 
             drawBoardDots();
             updateBoardVisuals();
@@ -749,8 +800,14 @@
             cancelAnimationFrame(animId);
             for(let s of sticks) s.classList.remove('animate-throw');
             actionBtn.disabled = true;
+            handleThrowResult(power);
+        }
 
-            const finalPower = power;
+        function handleThrowResult(finalPower) {
+            power = finalPower;
+            powerBar.style.width = finalPower + "%";
+            powerBar.style.background = (finalPower <= 10 || finalPower >= 90) ? '#ff5252' : '#4caf50';
+
             if (finalPower <= 10) {
                 SoundEffect.playFail();
                 handleFail("❌ 힘 부족 (실격)", "너무 약했습니다.");
@@ -759,7 +816,63 @@
                 SoundEffect.playFail();
                 handleFail("⚠️ 낙장!", "힘이 너무 셌습니다.");
             }
-            else calculateYutResult();
+            else {
+                calculateYutResult();
+            }
+        }
+
+        function performAiThrow() {
+            const currentTeam = teams[gameState.currentTeamIdx];
+            if (!currentTeam || !currentTeam.isAi) return;
+            aiTimeoutId = null;
+            mainResult.innerText = "AI가 던지고 있습니다...";
+            subResult.innerText = "AI가 힘을 조절 중이에요.";
+            const aiPower = Math.floor(Math.random() * 60) + 20;
+            setTimeout(() => {
+                handleThrowResult(aiPower);
+            }, 700);
+        }
+
+        function aiExecuteCurrentMove() {
+            const currentTeam = teams[gameState.currentTeamIdx];
+            if (!currentTeam || !currentTeam.isAi) return;
+            const moveObj = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
+            if (!moveObj) return;
+            let bestIdx = -1;
+            let bestScore = -Infinity;
+            currentTeam.tokens.forEach((token, idx) => {
+                if (token.finished) return;
+                const preview = simulateMove(token, moveObj.score);
+                if (preview.invalidMove) return;
+                let score = preview.finalIdx + (preview.catch ? 200 : 0);
+                if (preview.finished) score += 1000;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestIdx = idx;
+                }
+            });
+            if (bestIdx === -1) {
+                executeMove(-1, moveObj.id);
+            } else {
+                executeMove(bestIdx, moveObj.id);
+            }
+        }
+
+        function maybeTriggerAi() {
+            const currentTeam = teams[gameState.currentTeamIdx];
+            if (!currentTeam || !currentTeam.isAi) return;
+            if (aiTimeoutId) {
+                clearTimeout(aiTimeoutId);
+                aiTimeoutId = null;
+            }
+            if (gameState.step === 'THROW') {
+                gaugeArea.style.display = 'none';
+                aiTimeoutId = setTimeout(performAiThrow, 600);
+            } else if (gameState.step === 'MOVE' && gameState.moveQueue.length > 0) {
+                aiTimeoutId = setTimeout(() => {
+                    aiExecuteCurrentMove();
+                }, 600);
+            }
         }
 
         function handleFail(title, desc) {
@@ -825,6 +938,9 @@
                     actionBtn.disabled = false;
                     actionBtn.innerText = "던지기 (한번 더!)";
                     updateAvailableMovesUI();
+                    if (teams[gameState.currentTeamIdx]?.isAi) {
+                        setTimeout(maybeTriggerAi, 300);
+                    }
                 }, 1000);
             } else {
                 subResult.innerText = "이동할 말을 선택하세요.";
@@ -859,6 +975,7 @@
             } else if (gameState.moveQueue.length === 0) {
                  nextTurn();
             }
+            maybeTriggerAi();
         }
 
         function updateAvailableMovesUI() {
@@ -1291,9 +1408,19 @@
 
         function updateTurnUI() {
             const currentTeam = teams[gameState.currentTeamIdx];
-            turnIndicator.innerText = `${currentTeam.name} 차례`;
+            const aiSuffix = currentTeam.isAi ? " (AI)" : "";
+            turnIndicator.innerText = `${currentTeam.name}${aiSuffix} 차례`;
             turnIndicator.style.backgroundColor = currentTeam.color;
             actionBtn.style.backgroundColor = currentTeam.color;
+
+            if (currentTeam.isAi && gameState.step === 'THROW') {
+                actionBtn.disabled = true;
+                actionBtn.innerText = "AI가 던지고 있습니다...";
+                gaugeArea.style.display = 'none';
+            } else if (gameState.step === 'THROW') {
+                gaugeArea.style.display = 'block';
+            }
+            maybeTriggerAi();
         }
 
         // --- 5. 보드 그리기 (기존 동일) ---
