@@ -841,74 +841,90 @@
             }, 700);
         }
 
-        function aiExecuteCurrentMove() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!currentTeam || !currentTeam.isAi) return;
-            const moveObj = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
-            if (!moveObj) return;
-            let best = { idx: -1, value: -Infinity };
-            currentTeam.tokens.forEach((token, idx) => {
-                if (token.finished) return;
-                const evaluation = evaluateAiMove(token, moveObj);
-                if (evaluation.value > best.value) {
-                    best = { idx, value: evaluation.value };
-                }
-            });
-            if (best.idx === -1) {
-                executeMove(-1, moveObj.id);
-            } else {
-                executeMove(best.idx, moveObj.id);
-            }
-        }
-
-        function simulateFuturePotential(snapshot) {
-            const futureRolls = [1,2,3,4,5];
-            let total = 0;
-            futureRolls.forEach(roll => {
-                const futurePreview = simulateMove({
-                    index: snapshot.finalIdx,
-                    location: snapshot.loc,
-                    finished: snapshot.finished
-                }, roll);
-                if (futurePreview.invalidMove) return;
-                total += futurePreview.finalIdx * 3;
-                if (futurePreview.catch) total += 220;
-                if (futurePreview.finished) total += 420;
-            });
-            return total / futureRolls.length;
-        }
-
-        function enemyCaptureThreat(snapshot) {
-            let threat = 0;
-            teams.forEach((team, tIdx) => {
-                if (tIdx === gameState.currentTeamIdx) return;
-                team.tokens.forEach(enemy => {
-                    if (enemy.finished) return;
-                    [1,2,3,4,5].forEach(steps => {
-                        const enemyPreview = simulateMove(enemy, steps);
-                        if (enemyPreview.invalidMove) return;
-                        if (enemyPreview.loc === snapshot.loc && enemyPreview.finalIdx === snapshot.finalIdx) {
-                            threat += 220 - steps * 10;
-                        }
-                    });
-                });
-            });
-            return Math.min(Math.max(threat, 0), 400);
-        }
-
         function evaluateAiMove(token, moveObj) {
             const preview = simulateMove(token, moveObj.score);
             if (preview.invalidMove) return { value: -Infinity, preview };
-            let value = preview.finalIdx * 4 + moveObj.score * 10;
-            if (preview.catch) value += 600;
-            if (preview.finished) value += 1600;
-            if (moveObj.score >= 4) value += 280;
-            if (preview.loc === 'shortcut_1') value += 120;
-            if (preview.loc === 'shortcut_2') value += 150;
-            value -= enemyCaptureThreat(preview) * 0.6;
-            value += simulateFuturePotential(preview) * 0.35;
-            if (preview.loc === 'outer' && preview.finalIdx >= 17) value += 250; // nearing 승점
+            
+            // 1. 기본 점수: 이동 거리 및 완주 가중치
+            let value = preview.finalIdx * 5 + moveObj.score * 10;
+            
+            // 2. 잡기 점수 (매우 높음)
+            if (preview.catch) value += 1000;
+            
+            // 3. 완주 점수 (최우선)
+            if (preview.finished) value += 2500;
+            
+            // 4. 업기 점수 (전략적 유리함)
+            const currentTeam = teams[gameState.currentTeamIdx];
+            currentTeam.tokens.forEach(t => {
+                if (!t.finished && t !== token && t.index !== 0 &&
+                    t.index === preview.finalIdx && t.location === preview.loc) {
+                    value += 500; // 말을 업으면 가중치
+                }
+            });
+            
+            // 5. 지름길 가중치
+            if (preview.loc === 'shortcut_1') value += 300;
+            if (preview.loc === 'shortcut_2') value += 350;
+            if (preview.loc === 'shortcut_1' && preview.finalIdx === 23) value += 150; // 중앙 지점 가중치
+            
+            // 6. 패 자체 가중치
+            if (moveObj.score >= 4) value += 150;
+            if (moveObj.score === -1) value += 50; // 백도 전략적 활용
+            
+            // 7. 위험도 감점 (상대방에게 잡힐 거리인가?)
+            const threat = enemyCaptureThreat(preview);
+            value -= threat * 1.5; // 위험하면 감점 대폭 강화
+            
+            // 8. 미래 기대값 (다음 턴 유리함)
+            value += simulateFuturePotential(preview) * 0.5;
+            
+            // 9. 골인 지점 근처 보호
+            if (preview.loc === 'outer' && preview.finalIdx >= 17) value += 400;
+            
             return { value, preview };
+        }
+
+        function aiExecuteCurrentMove() {
+            const currentTeam = teams[gameState.currentTeamIdx];
+            if (!currentTeam || !currentTeam.isAi) return;
+            
+            if (gameState.moveQueue.length === 0) return;
+
+            let bestChoice = { moveId: null, tokenIdx: -1, value: -Infinity };
+
+            // 모든 가능한 패(Move)와 모든 말(Token)의 조합을 전수 조사하여 가장 가치가 높은 한 수를 찾음
+            gameState.moveQueue.forEach(moveObj => {
+                currentTeam.tokens.forEach((token, idx) => {
+                    if (token.finished) return;
+                    
+                    const evaluation = evaluateAiMove(token, moveObj);
+                    if (evaluation.value > bestChoice.value) {
+                        bestChoice = {
+                            moveId: moveObj.id,
+                            tokenIdx: idx,
+                            value: evaluation.value
+                        };
+                    }
+                });
+            });
+
+            // 가장 좋은 조합이 발견되었다면 실행
+            if (bestChoice.moveId !== null && bestChoice.tokenIdx !== -1) {
+                // 만약 선택된 패가 UI상 현재 선택된 패가 아니라면 변경
+                if (gameState.selectedMoveId !== bestChoice.moveId) {
+                    selectMove(bestChoice.moveId);
+                }
+                
+                // 사람처럼 생각하는 시간을 약간 준 뒤 이동 실행
+                setTimeout(() => {
+                    executeMove(bestChoice.tokenIdx, bestChoice.moveId);
+                }, 400);
+            } else {
+                // 이동 가능한 조합이 전혀 없으면 (예: 모든 말이 시작점인데 백도만 있는 경우 등) 패 소멸 처리
+                const currentMove = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId) || gameState.moveQueue[0];
+                executeMove(-1, currentMove.id);
+            }
         }
 
         function maybeTriggerAi() {
