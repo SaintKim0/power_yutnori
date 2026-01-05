@@ -1136,8 +1136,13 @@
             // 도착지에서 지름길 판정
             if (!sim.finished && !sim.invalidMove) {
                  if (sim.loc === 'outer') {
-                    if (sim.idx === 5) sim.loc = 'shortcut_1';
-                    else if (sim.idx === 10) sim.loc = 'shortcut_2';
+                    if (sim.idx === 5) {
+                        sim.loc = 'shortcut_1';
+                        sim.idx = 21;
+                    } else if (sim.idx === 10) {
+                        sim.loc = 'shortcut_2';
+                        sim.idx = 26;
+                    }
                 } else if (sim.loc === 'shortcut_1' && sim.idx === 23) {
                     sim.loc = 'shortcut_2';
                 }
