@@ -1122,7 +1122,8 @@
                 finished: false, 
                 catch: false, 
                 finalIdx: 0,
-                invalidMove: false
+                invalidMove: false,
+                movedForward: false
             };
 
             // 백도 처리 (steps === -1)
@@ -1149,7 +1150,9 @@
                 }
             } else {
                 // 일반 이동
+                let forward = false;
                 for(let i=0; i<steps; i++) {
+                    forward = true;
                     if (sim.loc === 'outer') {
                         sim.idx++;
                         if (sim.idx > 20) { sim.finished = true; break; }
@@ -1167,12 +1170,13 @@
                         else sim.idx++;
                     }
                 }
+                sim.movedForward = forward;
             }
             
             // 도착지에서 지름길 판정
             if (!sim.finished && !sim.invalidMove) {
                  if (sim.loc === 'outer') {
-                    if (sim.idx === 5) {
+                    if (sim.idx === 5 && sim.movedForward) {
                         sim.loc = 'shortcut_1';
                         sim.idx = 21;
                     } else if (sim.idx === 10) {
