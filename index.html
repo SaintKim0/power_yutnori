@@ -336,14 +336,38 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* 폭죽 캔버스 */
-        #confettiCanvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 50;
-            display: none;
+        /* 스킬 영역 */
+        .skill-container {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 12px;
+        }
+        .btn-skill {
+            flex: 1;
+            padding: 6px 2px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .btn-skill:active:not(:disabled) { transform: translateY(2px); background: #eee; }
+        .btn-skill:disabled { opacity: 0.5; cursor: not-allowed; }
+        .skill-icon { font-size: 1.1rem; margin-bottom: 2px; }
+        .skill-cost { font-size: 0.6rem; color: #d84315; font-weight: bold; }
+        .sp-display {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #d84315;
+            margin-left: 5px;
         }
 
     </style>
@@ -383,6 +407,13 @@
             </select>
         </div>
 
+        <div class="input-group">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">
+                파워업 모드 (특수 스킬)
+            </label>
+        </div>
+
         <div id="aiDifficultyArea" class="input-group" style="display: none;">
             <label for="aiDifficulty">AI 캐릭터 (난이도)</label>
             <select id="aiDifficulty">
@@ -395,7 +426,7 @@
         <button class="btn-primary" onclick="initGame()">게임 시작 ▶</button>
         
         <div style="display:flex; gap:10px; margin-top: 15px;">
-            <button class="btn-info" style="margin-top:0; flex:1;" onclick="showRules()">📖 방법</button>
+            <button class="btn-info" style="margin-top:0; flex:1;" onclick="showRules()">📖 게임방법</button>
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
         </div>
     </div>
@@ -423,6 +454,26 @@
             <div class="status-bar">
                 <span id="turnIndicator" class="current-turn">청팀 차례</span>
                 <span id="gameInfo" style="font-size:0.9rem">말 2개 / 4팀</span>
+                <span id="spDisplay" class="sp-display" style="display: none;">SP: 3</span>
+            </div>
+
+            <!-- 스킬 버튼 영역 -->
+            <div id="skillArea" class="skill-container" style="display: none;">
+                <button class="btn-skill" onclick="useSkill('shield')" id="skillShield">
+                    <span class="skill-icon">🛡️</span>
+                    <span>방어막</span>
+                    <span class="skill-cost">1 SP</span>
+                </button>
+                <button class="btn-skill" onclick="useSkill('reroll')" id="skillReroll">
+                    <span class="skill-icon">🔄</span>
+                    <span>재도전</span>
+                    <span class="skill-cost">1 SP</span>
+                </button>
+                <button class="btn-skill" onclick="useSkill('boost')" id="skillBoost">
+                    <span class="skill-icon">⚡</span>
+                    <span>부스트</span>
+                    <span class="skill-cost">2 SP</span>
+                </button>
             </div>
 
             <!-- 윷가락 시각화 -->
@@ -476,12 +527,16 @@
             <div class="modal-title" style="text-align: center;">📜 게임 방법</div>
             <div class="modal-desc">
                 <ul class="rule-list">
-                    <li><strong>던지기:</strong> 파워 게이지의 초록색 구간에 맞춰 버튼을 누르세요. 빨간 구간은 실격입니다.</li>
-                    <li><strong>이동:</strong> 도(1), 개(2), 걸(3), 윷(4), 모(5), 백도(-1)만큼 이동합니다.</li>
-                    <li><strong>한 번 더:</strong> '윷'이나 '모'는 한 번 더 던질 수 있습니다.</li>
-                    <li><strong>잡기:</strong> 상대방 말을 잡으면 한 번 더 던집니다.</li>
-                    <li><strong>지름길:</strong> 모서리나 중앙에 멈추면 지름길로 이동합니다.</li>
-                    <li><strong>승리:</strong> 팀의 모든 말이 출발점으로 돌아오면 승리!</li>
+                    <li><strong>던지기:</strong> 파워 게이지의 초록색 구간에 맞춰 버튼을 누르세요.</li>
+                    <li><strong>보너스:</strong> '윷', '모' 또는 상대 말을 잡으면 한 번 더 던집니다.</li>
+                    <li><strong>업기:</strong> 자기 팀의 말이 같은 칸에 있으면 업어서 함께 이동합니다.</li>
+                    <li><strong>지름길:</strong> 모서리나 중앙 칸에 멈추면 지름길로 진입할 수 있습니다.</li>
+                    <li style="color: #d84315; font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li>
+                    <li style="font-size: 0.85rem; margin-bottom: 5px;">* 자신의 차례에 SP를 소모하여 스킬을 사용합니다.</li>
+                    <li><strong>SP 충전:</strong> 상대 말을 잡을 때마다 1 SP가 충전됩니다 (최대 5).</li>
+                    <li><strong>🛡️ 방어막 (1 SP):</strong> 내 말에 보호막을 씌워 상대의 잡기를 1회 방어합니다.</li>
+                    <li><strong>🔄 재도전 (1 SP):</strong> 현재 나온 패를 모두 취소하고 다시 던집니다.</li>
+                    <li><strong>⚡ 부스트 (2 SP):</strong> 즉시 2칸 전진하며, 이때 상대를 잡으면 <strong>보너스 던지기</strong> 기회를 얻습니다.</li>
                 </ul>
             </div>
             <button class="btn-secondary" style="width: 100%; background:#777;" onclick="closeRules()">닫기</button>
@@ -646,8 +701,12 @@
         const addTeamBtn = document.getElementById('btnAddTeam');
         const aiDifficultyArea = document.getElementById('aiDifficultyArea');
         const aiDifficultySelect = document.getElementById('aiDifficulty');
+        const powerUpModeToggle = document.getElementById('powerUpMode');
+        const skillArea = document.getElementById('skillArea');
+        const spDisplay = document.getElementById('spDisplay');
 
         let gameMode = 'multi';
+        let isPowerUpMode = false;
         let aiDifficulty = 'normal';
         let aiTimeoutId = null;
         const aiActionDelay = 1200;
@@ -725,6 +784,7 @@
             tokensPerTeam = parseInt(tokenCountInput.value) || 2;
             
             gameState.maxUndos = maxVal;
+            isPowerUpMode = powerUpModeToggle.checked;
             const aiMode = modeSelect.value === 'ai';
             gameMode = modeSelect.value;
             aiDifficulty = aiDifficultySelect.value;
@@ -758,15 +818,24 @@
             // 팀별 설정 적용
             teams.forEach(t => {
                 t.remainingUndos = maxVal;
+                t.sp = 3; // 기본 SP 지급
                 // 말 개수에 맞춰 토큰 재생성
                 t.tokens = [];
                 for(let i=0; i<tokensPerTeam; i++) {
-                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false });
+                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, shielded: false });
                 }
             });
 
             setupArea.style.display = 'none';
             gameWrapper.style.display = 'flex';
+            
+            if (isPowerUpMode) {
+                skillArea.style.display = 'flex';
+                spDisplay.style.display = 'inline';
+            } else {
+                skillArea.style.display = 'none';
+                spDisplay.style.display = 'none';
+            }
             gameState.step = 'THROW';
             gameState.currentTeamIdx = 0;
             gameState.moveQueue = [];
@@ -1319,11 +1388,9 @@
                 // 같은 위치에 있는 같은 팀의 말들 찾기 (출발점 제외)
                 const tokensToMove = [];
                 if (selectedToken.index === 0) {
-                    // 출발점에서는 선택한 말만 이동
                     tokensToMove.push(selectedToken);
                 } else {
-                    // 같은 위치에 있는 모든 말 찾기
-                    currentTeam.tokens.forEach((token, idx) => {
+                    currentTeam.tokens.forEach((token) => {
                         if (!token.finished && 
                             token.index === selectedToken.index && 
                             token.location === selectedToken.location) {
@@ -1347,33 +1414,35 @@
                             t.tokens.forEach(enemy => {
                                 if (!enemy.finished && enemy.index !== 0 &&
                                     enemy.index === token.index && enemy.location === token.location) {
-                                    enemy.index = 0;
-                                    enemy.location = 'outer';
-                                    caughtSomething = true;
+                                    
+                                    // 방어막 체크
+                                    if (enemy.shielded) {
+                                        enemy.shielded = false;
+                                        showMessage("🛡️ 방어막이 상대를 보호했습니다!", "#2e7d32");
+                                    } else {
+                                        enemy.index = 0;
+                                        enemy.location = 'outer';
+                                        caughtSomething = true;
+                                        // 잡으면 SP 보너스
+                                        if (isPowerUpMode) currentTeam.sp = Math.min(5, currentTeam.sp + 1);
+                                    }
                                 }
                             });
                         });
                     }
                     
-                    if (token.finished) {
-                        anyFinished = true;
-                    }
+                    if (token.finished) anyFinished = true;
                 });
                 
                 if (anyFinished) {
-                    SoundEffect.playGoodThrow(); // 완주 시 좋은 소리
-                    subResult.innerText = tokensToMove.length > 1 ? 
-                        `${tokensToMove.length}개의 말이 완주했습니다!` : 
-                        "말이 완주했습니다!";
+                    SoundEffect.playGoodThrow();
+                    showMessage("🏁 말이 완주했습니다!", "#1976d2");
                 }
             }
 
             updateBoardVisuals();
             
-            // 승리 조건 확인
-            if (checkWin()) {
-                return;
-            }
+            if (checkWin()) return;
 
             if (currentTeam.remainingUndos > 0) {
                 btnUndo.innerText = `↩ 물리기 (남은 횟수: ${currentTeam.remainingUndos})`;
@@ -1384,20 +1453,12 @@
             }
 
             if (caughtSomething) {
-                SoundEffect.playCatch(); // 잡기 소리
-                mainResult.innerText = "잡았다!";
-                subResult.innerText = "말이 이동합니다...";
-                moveArea.style.display = 'none'; 
-                gaugeArea.style.display = 'none';
-
+                SoundEffect.playCatch();
+                showMessage("🎯 잡았다! 한 번 더 던지세요!", "#d32f2f");
                 setTimeout(() => {
-                    subResult.innerText = "상대 말을 잡아서 한 번 더 던집니다!";
                     gameState.step = 'THROW';
-                    gaugeArea.style.display = 'block';
-                    actionBtn.disabled = false;
-                    actionBtn.innerText = "던지기 (잡기 보너스)";
-                    maybeTriggerAi();
-                }, 800);
+                    updateTurnUI();
+                }, 1000);
                 return;
             }
 
@@ -1548,6 +1609,12 @@
              }
         }
 
+        function showMessage(msg, color) {
+            mainResult.innerText = msg;
+            mainResult.style.color = color || "#333";
+            subResult.innerText = "";
+        }
+
         function updateTurnUI() {
             const currentTeam = teams[gameState.currentTeamIdx];
             const aiSuffix = currentTeam.isAi ? " (AI)" : "";
@@ -1555,12 +1622,32 @@
             turnIndicator.style.backgroundColor = currentTeam.color;
             actionBtn.style.backgroundColor = currentTeam.color;
 
+            // SP 업데이트 및 스킬 버튼 상태 제어
+            if (isPowerUpMode) {
+                spDisplay.textContent = `SP: ${currentTeam.sp}`;
+                const canUseShield = currentTeam.sp >= 1 && currentTeam.tokens.some(t => t.index > 0 && !t.finished && !t.shielded);
+                const canUseReroll = currentTeam.sp >= 1 && gameState.step === 'MOVE' && gameState.moveQueue.length > 0;
+                const canUseBoost = currentTeam.sp >= 2 && currentTeam.tokens.some(t => t.index > 0 && !t.finished);
+                
+                document.getElementById('skillShield').disabled = !canUseShield || currentTeam.isAi;
+                document.getElementById('skillReroll').disabled = !canUseReroll || currentTeam.isAi;
+                document.getElementById('skillBoost').disabled = !canUseBoost || currentTeam.isAi;
+            }
+
             if (currentTeam.isAi && gameState.step === 'THROW') {
                 actionBtn.disabled = true;
                 actionBtn.innerText = "AI가 던지고 있습니다...";
                 gaugeArea.style.display = 'none';
             } else if (gameState.step === 'THROW') {
                 gaugeArea.style.display = 'block';
+                actionBtn.disabled = false;
+                if (gameState.moveQueue.length > 0) {
+                    actionBtn.innerText = "던지기 (보너스)";
+                } else {
+                    actionBtn.innerText = "던지기 (START)";
+                }
+            } else {
+                gaugeArea.style.display = 'none';
             }
             maybeTriggerAi();
         }
@@ -1630,17 +1717,103 @@
             });
         }
 
+        function useSkill(type) {
+            const currentTeam = teams[gameState.currentTeamIdx];
+            if (currentTeam.isAi) return;
+
+            if (type === 'shield') {
+                if (currentTeam.sp < 1) return alert("SP가 부족합니다!");
+                const target = currentTeam.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
+                if (!target) return alert("보호할 수 있는 말이 없습니다 (판 위에 있어야 함)");
+                
+                currentTeam.sp -= 1;
+                target.shielded = true;
+                showMessage(`${currentTeam.name} 팀: 🛡️ 방어막 사용!`, "#2e7d32");
+            } 
+            else if (type === 'reroll') {
+                if (gameState.step !== 'MOVE') return alert("패가 있을 때만 사용할 수 있습니다.");
+                if (currentTeam.sp < 1) return alert("SP가 부족합니다!");
+                
+                currentTeam.sp -= 1;
+                gameState.moveQueue = [];
+                gameState.step = 'THROW';
+                showMessage(`${currentTeam.name} 팀: 🔄 재도전! 다시 던집니다.`, "#d84315");
+            }
+            else if (type === 'boost') {
+                if (currentTeam.sp < 2) return alert("SP가 부족합니다!");
+                const target = currentTeam.tokens.find(t => t.index > 0 && !t.finished);
+                if (!target) return alert("부스트를 사용할 말이 없습니다.");
+                
+                currentTeam.sp -= 2;
+                const preview = simulateMove(target, 2);
+                
+                // 업힌 말들 함께 이동
+                const oldIdx = target.index;
+                const oldLoc = target.location;
+                const tokensToMove = currentTeam.tokens.filter(t => 
+                    !t.finished && t.index === oldIdx && t.location === oldLoc
+                );
+
+                tokensToMove.forEach(t => {
+                    t.index = preview.finalIdx;
+                    t.location = preview.loc;
+                    t.finished = preview.finished;
+                });
+
+                let caughtSomething = false;
+                if (preview.catch) {
+                    teams.forEach((t, tIdx) => {
+                        if (tIdx === gameState.currentTeamIdx) return;
+                        t.tokens.forEach(enemy => {
+                            if (!enemy.finished && enemy.index !== 0 &&
+                                enemy.index === preview.finalIdx && enemy.location === preview.loc) {
+                                if (enemy.shielded) {
+                                    enemy.shielded = false;
+                                    showMessage("⚡ 부스트 공격이 상대 🛡️방어막에 막혔습니다!", "#2e7d32");
+                                } else {
+                                    enemy.index = 0;
+                                    enemy.location = 'outer';
+                                    caughtSomething = true;
+                                    currentTeam.sp = Math.min(5, currentTeam.sp + 1);
+                                }
+                            }
+                        });
+                    });
+                }
+
+                if (caughtSomething) {
+                    SoundEffect.playCatch();
+                    showMessage("🎯 ⚡부스트로 잡았습니다! 한 번 더!", "#d32f2f");
+                    gameState.step = 'THROW';
+                } else {
+                    showMessage(`${currentTeam.name} 팀: ⚡ 부스트! 2칸 전진!`, "#0277bd");
+                }
+            }
+
+            updateTurnUI();
+            updateBoardVisuals();
+            checkWin();
+        }
+
         function drawToken(token, color, cx, cy) {
             const currentTeam = teams.find(t => t.tokens.includes(token));
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
             
-            // 말의 배경 원
+            if (token.shielded) {
+                const shield = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                shield.setAttribute("cx", cx); shield.setAttribute("cy", cy); shield.setAttribute("r", 16);
+                shield.setAttribute("fill", "none");
+                shield.setAttribute("stroke", "#4caf50");
+                shield.setAttribute("stroke-width", "3");
+                shield.setAttribute("stroke-dasharray", "4,2");
+                g.appendChild(shield);
+            }
+
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             circle.setAttribute("cx", cx); circle.setAttribute("cy", cy); circle.setAttribute("r", 12);
             circle.setAttribute("fill", color); circle.setAttribute("class", "token");
             circle.setAttribute("stroke", "white"); circle.setAttribute("stroke-width", "2");
             
-            // 캐릭터 이모지 설정
             let emoji = "⚪";
             if (currentTeam) {
                 if (currentTeam.isAi) {
@@ -1658,7 +1831,6 @@
             text.setAttribute("text-anchor", "middle");
             text.textContent = emoji;
             
-            // 말 번호 표시 (작게)
             const idText = document.createElementNS("http://www.w3.org/2000/svg", "text");
             idText.setAttribute("x", cx + 8); idText.setAttribute("y", cy - 8);
             idText.setAttribute("font-size", "8"); idText.setAttribute("font-weight", "bold");
