@@ -803,6 +803,8 @@
             animId = requestAnimationFrame(loopGauge);
         }
 
+        let isBonusRound = false;
+
         function stopGauge() {
             isCharging = false;
             cancelAnimationFrame(animId);
@@ -818,11 +820,13 @@
 
             if (finalPower <= 10) {
                 SoundEffect.playFail();
-                handleFail("❌ 힘 부족 (실격)", "너무 약했습니다.");
+                if (isBonusRound) handleBonusFail();
+                else handleFail("❌ 힘 부족 (실격)", "너무 약했습니다.");
             }
             else if (finalPower >= 90) {
                 SoundEffect.playFail();
-                handleFail("⚠️ 낙장!", "힘이 너무 셌습니다.");
+                if (isBonusRound) handleBonusFail();
+                else handleFail("⚠️ 낙장!", "힘이 너무 셌습니다.");
             }
             else {
                 calculateYutResult();
@@ -935,6 +939,18 @@
             setTimeout(() => { nextTurn(); }, 1500);
         }
 
+        function handleBonusFail() {
+            if (gameState.moveQueue.length > 0) {
+                gameState.moveQueue.pop();
+            }
+            isBonusRound = false;
+            mainResult.innerText = "보너스 던지기 무효";
+            subResult.innerText = "기존 결과로 이동하세요.";
+            setTimeout(() => {
+                prepareMoveStep();
+            }, 800);
+        }
+
         function calculateYutResult() {
             let flatCount = 0;
             let results = [];
@@ -980,6 +996,7 @@
             }
             
             gameState.moveQueue.push({ id: Date.now(), score: score, text: text });
+            isBonusRound = (score >= 4);
 
             // 소리 재생
             if (score >= 4) SoundEffect.playGoodThrow(); // 윷,모
@@ -1029,6 +1046,7 @@
                  nextTurn();
             }
             maybeTriggerAi();
+            isBonusRound = false;
         }
 
         function updateAvailableMovesUI() {
