@@ -846,33 +846,69 @@
             if (!currentTeam || !currentTeam.isAi) return;
             const moveObj = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
             if (!moveObj) return;
-            let bestIdx = -1;
-            let bestScore = -Infinity;
-            const captureCandidates = [];
+            let best = { idx: -1, value: -Infinity };
             currentTeam.tokens.forEach((token, idx) => {
                 if (token.finished) return;
-                const preview = simulateMove(token, moveObj.score);
-                if (preview.invalidMove) return;
-                if (preview.catch) {
-                    captureCandidates.push({ idx, value: preview.finalIdx });
-                }
-                let score = preview.finalIdx + (preview.catch ? 200 : 0);
-                if (preview.finished) score += 1000;
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestIdx = idx;
+                const evaluation = evaluateAiMove(token, moveObj);
+                if (evaluation.value > best.value) {
+                    best = { idx, value: evaluation.value };
                 }
             });
-            if (moveObj.score >= 4 && captureCandidates.length > 0) {
-                captureCandidates.sort((a,b) => b.value - a.value);
-                executeMove(captureCandidates[0].idx, moveObj.id);
-                return;
-            }
-            if (bestIdx === -1) {
+            if (best.idx === -1) {
                 executeMove(-1, moveObj.id);
             } else {
-                executeMove(bestIdx, moveObj.id);
+                executeMove(best.idx, moveObj.id);
             }
+        }
+
+        function simulateFuturePotential(snapshot) {
+            const futureRolls = [1,2,3,4,5];
+            let total = 0;
+            futureRolls.forEach(roll => {
+                const futurePreview = simulateMove({
+                    index: snapshot.finalIdx,
+                    location: snapshot.loc,
+                    finished: snapshot.finished
+                }, roll);
+                if (futurePreview.invalidMove) return;
+                total += futurePreview.finalIdx * 3;
+                if (futurePreview.catch) total += 220;
+                if (futurePreview.finished) total += 420;
+            });
+            return total / futureRolls.length;
+        }
+
+        function enemyCaptureThreat(snapshot) {
+            let threat = 0;
+            teams.forEach((team, tIdx) => {
+                if (tIdx === gameState.currentTeamIdx) return;
+                team.tokens.forEach(enemy => {
+                    if (enemy.finished) return;
+                    [1,2,3,4,5].forEach(steps => {
+                        const enemyPreview = simulateMove(enemy, steps);
+                        if (enemyPreview.invalidMove) return;
+                        if (enemyPreview.loc === snapshot.loc && enemyPreview.finalIdx === snapshot.finalIdx) {
+                            threat += 220 - steps * 10;
+                        }
+                    });
+                });
+            });
+            return Math.min(Math.max(threat, 0), 400);
+        }
+
+        function evaluateAiMove(token, moveObj) {
+            const preview = simulateMove(token, moveObj.score);
+            if (preview.invalidMove) return { value: -Infinity, preview };
+            let value = preview.finalIdx * 4 + moveObj.score * 10;
+            if (preview.catch) value += 600;
+            if (preview.finished) value += 1600;
+            if (moveObj.score >= 4) value += 280;
+            if (preview.loc === 'shortcut_1') value += 120;
+            if (preview.loc === 'shortcut_2') value += 150;
+            value -= enemyCaptureThreat(preview) * 0.6;
+            value += simulateFuturePotential(preview) * 0.35;
+            if (preview.loc === 'outer' && preview.finalIdx >= 17) value += 250; // nearing 승점
+            return { value, preview };
         }
 
         function maybeTriggerAi() {
