@@ -667,14 +667,14 @@
             if (teams.length >= 4) return;
             const c = TEAM_COLORS[colorIdx];
             // 토큰 생성은 게임 시작 시 확정된 개수로 재생성함 (여기선 임시 구조만)
-            teams.push({ 
-                id: teams.length, 
-                name: c.name, 
-                color: c.code, 
-                tokens: [],
-                remainingUndos: 2,
-                isAi: false 
-            });
+                teams.push({ 
+                    id: teams.length, 
+                    name: c.name, 
+                    color: c.code, 
+                    tokens: [],
+                    remainingUndos: 2,
+                    isAi: false 
+                });
         }
 
         function addTeam() {
@@ -739,7 +739,7 @@
                 // 말 개수에 맞춰 토큰 재생성
                 t.tokens = [];
                 for(let i=0; i<tokensPerTeam; i++) {
-                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false });
+                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, pendingShortcut: false });
                 }
             });
 
@@ -1141,9 +1141,21 @@
                 catch: false, 
                 finalIdx: 0,
                 invalidMove: false,
-                movedForward: false,
-                canTakeShortcut: false
+                movedForward: false
             };
+            let remainingSteps = steps;
+            let shortcutPending = token.pendingShortcut;
+            if (shortcutPending && steps > 0) {
+                if (token.index === 5) {
+                    sim.loc = 'shortcut_1';
+                    sim.idx = 21;
+                } else if (token.index === 10) {
+                    sim.loc = 'shortcut_2';
+                    sim.idx = 26;
+                }
+                shortcutPending = false;
+                remainingSteps--;
+            }
 
             // 백도 처리 (steps === -1)
             if (steps === -1) {
@@ -1170,12 +1182,11 @@
             } else {
                 // 일반 이동
                 let forward = false;
-                for(let i=0; i<steps; i++) {
+                for(let i=0; i<remainingSteps; i++) {
                     forward = true;
                     if (sim.loc === 'outer') {
                         sim.idx++;
                         if (sim.idx > 20) { sim.finished = true; break; }
-                        if ((sim.idx === 5 || sim.idx === 10) && i < steps - 1) sim.canTakeShortcut = true;
                     } 
                     else if (sim.loc === 'shortcut_1') {
                         if (sim.idx === 5) sim.idx = 21;
@@ -1196,14 +1207,12 @@
             // 도착지에서 지름길 판정
             if (!sim.finished && !sim.invalidMove) {
                  if (sim.loc === 'outer') {
-                    if (sim.idx === 5 && sim.movedForward && sim.canTakeShortcut) {
+                    if (sim.idx === 5 && sim.movedForward) {
                         sim.loc = 'shortcut_1';
                         sim.idx = 21;
-                        sim.canTakeShortcut = false;
-                    } else if (sim.idx === 10 && sim.canTakeShortcut) {
+                    } else if (sim.idx === 10) {
                         sim.loc = 'shortcut_2';
                         sim.idx = 26;
-                        sim.canTakeShortcut = false;
                     }
                 } else if (sim.loc === 'shortcut_1' && sim.idx === 23) {
                     sim.loc = 'shortcut_2';
@@ -1283,6 +1292,7 @@
                     token.index = result.finalIdx;
                     token.location = result.loc;
                     token.finished = result.finished;
+                    token.pendingShortcut = (token.location === 'outer' && (token.index === 5 || token.index === 10));
                     
                     if (result.catch) {
                         teams.forEach((t, tIdx) => {
