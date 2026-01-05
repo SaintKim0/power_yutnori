@@ -382,6 +382,15 @@
                 <option value="ai">AI와 플레이 (혼자용)</option>
             </select>
         </div>
+
+        <div id="aiDifficultyArea" class="input-group" style="display: none;">
+            <label for="aiDifficulty">AI 캐릭터 (난이도)</label>
+            <select id="aiDifficulty">
+                <option value="easy">꼬마 도야 (초보)</option>
+                <option value="normal" selected>영리한 돗개 (보통)</option>
+                <option value="hard">전설의 윷신 (고수)</option>
+            </select>
+        </div>
         
         <button class="btn-primary" onclick="initGame()">게임 시작 ▶</button>
         
@@ -635,8 +644,11 @@
         const ruleModal = document.getElementById('ruleModal');
         const modeSelect = document.getElementById('modeSelect');
         const addTeamBtn = document.getElementById('btnAddTeam');
+        const aiDifficultyArea = document.getElementById('aiDifficultyArea');
+        const aiDifficultySelect = document.getElementById('aiDifficulty');
 
         let gameMode = 'multi';
+        let aiDifficulty = 'normal';
         let aiTimeoutId = null;
         const aiActionDelay = 1200;
 
@@ -698,6 +710,7 @@
         modeSelect.addEventListener('change', () => {
             gameMode = modeSelect.value;
             addTeamBtn.disabled = (gameMode === 'ai');
+            aiDifficultyArea.style.display = (gameMode === 'ai') ? 'block' : 'none';
             if (gameMode === 'ai' && teams.length > 2) {
                 teams = teams.slice(0, 2);
                 renderTeamSetup();
@@ -714,15 +727,24 @@
             gameState.maxUndos = maxVal;
             const aiMode = modeSelect.value === 'ai';
             gameMode = modeSelect.value;
+            aiDifficulty = aiDifficultySelect.value;
             gameState.isSinglePlayer = aiMode;
+            
             if (aiMode) {
                 if (teams.length > 2) teams = teams.slice(0, 2);
                 while (teams.length < 2) addTeamData(teams.length);
+                
+                const aiNames = {
+                    'easy': '꼬마 도야',
+                    'normal': '영리한 돗개',
+                    'hard': '전설의 윷신'
+                };
+                
                 teams[0].isAi = false;
                 teams[0].name = TEAM_COLORS[0].name;
                 teams[0].color = TEAM_COLORS[0].code;
                 teams[1].isAi = true;
-                teams[1].name = "AI";
+                teams[1].name = aiNames[aiDifficulty] || 'AI';
                 teams[1].color = TEAM_COLORS[1].code;
                 renderTeamSetup();
             } else {
@@ -884,38 +906,51 @@
                 finished: preview.finished
             });
 
-            // 1. 전진 거리 점수 (전진할수록 좋음)
-            let value = (currentDist - nextDist) * 40;
+            // 난이도별 가중치 설정
+            const weights = {
+                'easy': { dist: 20, capture: 200, finish: 500, shortcut: 50, threat: 0.1, stacking: 20 },
+                'normal': { dist: 40, capture: 800, finish: 1000, shortcut: 250, threat: 0.6, stacking: 120 },
+                'hard': { dist: 60, capture: 1500, finish: 2000, shortcut: 500, threat: 1.2, stacking: 200 }
+            };
+            const w = weights[aiDifficulty] || weights['normal'];
 
-            // 2. 잡기 보너스 (매우 중요)
-            if (preview.catch) value += 800;
+            // 1. 전진 거리 점수
+            let value = (currentDist - nextDist) * w.dist;
 
-            // 3. 완주 보너스 (중요)
-            if (preview.finished) value += 1000;
+            // 2. 잡기 보너스
+            if (preview.catch) value += w.capture;
+
+            // 3. 완주 보너스
+            if (preview.finished) value += w.finish;
 
             // 4. 지름길 진입 보너스
             if (token.location === 'outer' && preview.loc.startsWith('shortcut')) {
-                value += 250;
+                value += w.shortcut;
             }
             // 5. 중앙(23번) 지름길 교차점 진입 보너스
             if (token.location === 'shortcut_1' && preview.loc === 'shortcut_2') {
-                value += 150;
+                value += w.shortcut * 0.6;
             }
 
-            // 6. 업기 전략 (자기 말과 합쳐지기)
+            // 6. 업기 전략
             const currentTeam = teams[gameState.currentTeamIdx];
             const isStacking = currentTeam.tokens.some(t => 
                 !t.finished && t !== token && t.index === preview.finalIdx && t.location === preview.loc
             );
-            if (isStacking && preview.finalIdx !== 0) value += 120;
+            if (isStacking && preview.finalIdx !== 0) value += w.stacking;
 
-            // 7. 위험도 감점 (상대방에게 잡힐 가능성)
+            // 7. 위험도 감점
             if (!preview.finished) {
-                value -= enemyCaptureThreat(preview);
+                value -= enemyCaptureThreat(preview) * w.threat;
             }
 
-            // 8. 윷/모 패 자체의 가치 (한 번 더 던질 수 있는 기회 비용)
+            // 8. 패 가중치
             if (moveObj.score >= 4) value += 100;
+
+            // 난이도가 'easy'일 경우 약간의 랜덤성 부여 (실수 유도)
+            if (aiDifficulty === 'easy') {
+                value += (Math.random() - 0.5) * 150;
+            }
 
             return { value, preview };
         }
@@ -1596,14 +1631,42 @@
         }
 
         function drawToken(token, color, cx, cy) {
+            const currentTeam = teams.find(t => t.tokens.includes(token));
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            
+            // 말의 배경 원
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", cx); circle.setAttribute("cy", cy); circle.setAttribute("r", 10);
+            circle.setAttribute("cx", cx); circle.setAttribute("cy", cy); circle.setAttribute("r", 12);
             circle.setAttribute("fill", color); circle.setAttribute("class", "token");
+            circle.setAttribute("stroke", "white"); circle.setAttribute("stroke-width", "2");
+            
+            // 캐릭터 이모지 설정
+            let emoji = "⚪";
+            if (currentTeam) {
+                if (currentTeam.isAi) {
+                    const aiEmojis = { 'easy': '🐷', 'normal': '🐶', 'hard': '🐉' };
+                    emoji = aiEmojis[aiDifficulty] || '🤖';
+                } else {
+                    const teamEmojis = ['🐯', '🐰', '🐸', '🐥'];
+                    emoji = teamEmojis[currentTeam.id % teamEmojis.length];
+                }
+            }
+
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", cx); text.setAttribute("y", cy); text.setAttribute("dy", 3);
-            text.setAttribute("class", "token-text"); text.textContent = token.id + 1;
-            g.appendChild(circle); g.appendChild(text); tokenLayer.appendChild(g);
+            text.setAttribute("x", cx); text.setAttribute("y", cy); text.setAttribute("dy", 4);
+            text.setAttribute("font-size", "14");
+            text.setAttribute("text-anchor", "middle");
+            text.textContent = emoji;
+            
+            // 말 번호 표시 (작게)
+            const idText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            idText.setAttribute("x", cx + 8); idText.setAttribute("y", cy - 8);
+            idText.setAttribute("font-size", "8"); idText.setAttribute("font-weight", "bold");
+            idText.setAttribute("fill", "white"); idText.setAttribute("stroke", "black"); idText.setAttribute("stroke-width", "0.5");
+            idText.textContent = token.id + 1;
+
+            g.appendChild(circle); g.appendChild(text); g.appendChild(idText);
+            tokenLayer.appendChild(g);
         }
 
         initSetup();
