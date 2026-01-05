@@ -889,11 +889,14 @@
             const currentTeam = teams[gameState.currentTeamIdx];
             if (!currentTeam || !currentTeam.isAi) return;
             
-            if (gameState.moveQueue.length === 0) return;
+            if (gameState.moveQueue.length === 0) {
+                nextTurn();
+                return;
+            }
 
             let bestChoice = { moveId: null, tokenIdx: -1, value: -Infinity };
 
-            // 모든 가능한 패(Move)와 모든 말(Token)의 조합을 전수 조사하여 가장 가치가 높은 한 수를 찾음
+            // 모든 가능한 패(Move)와 모든 말(Token)의 조합을 전수 조사
             gameState.moveQueue.forEach(moveObj => {
                 currentTeam.tokens.forEach((token, idx) => {
                     if (token.finished) return;
@@ -911,19 +914,20 @@
 
             // 가장 좋은 조합이 발견되었다면 실행
             if (bestChoice.moveId !== null && bestChoice.tokenIdx !== -1) {
-                // 만약 선택된 패가 UI상 현재 선택된 패가 아니라면 변경
-                if (gameState.selectedMoveId !== bestChoice.moveId) {
-                    selectMove(bestChoice.moveId);
-                }
+                // 1. 먼저 패를 선택 (시각적 피드백)
+                selectMove(bestChoice.moveId);
                 
-                // 사람처럼 생각하는 시간을 약간 준 뒤 이동 실행
-                setTimeout(() => {
+                // 2. 약간의 시간차를 두고 실제 이동 실행
+                if (aiTimeoutId) clearTimeout(aiTimeoutId);
+                aiTimeoutId = setTimeout(() => {
                     executeMove(bestChoice.tokenIdx, bestChoice.moveId);
-                }, 400);
+                }, 600);
             } else {
-                // 이동 가능한 조합이 전혀 없으면 (예: 모든 말이 시작점인데 백도만 있는 경우 등) 패 소멸 처리
-                const currentMove = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId) || gameState.moveQueue[0];
-                executeMove(-1, currentMove.id);
+                // 이동 가능한 조합이 전혀 없으면 현재 남은 패 중 하나를 강제 소멸
+                const firstMove = gameState.moveQueue[0];
+                if (firstMove) {
+                    executeMove(-1, firstMove.id);
+                }
             }
         }
 
