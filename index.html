@@ -42,6 +42,13 @@
             overscroll-behavior: none; /* 스크롤 바운스 방지 */
         }
 
+        .app-shell {
+            width: 100%;
+            max-width: 100%;
+            transform: scale(0.85);
+            transform-origin: top center;
+        }
+
         h1 {
             color: var(--primary-color);
             margin: 3px 0 5px 0;
@@ -72,8 +79,6 @@
             max-width: 500px;
             gap: 5px;
             padding-bottom: 3px;
-            transform: scale(0.85);
-            transform-origin: top center;
             margin-top: -8px;
         }
 
@@ -345,7 +350,8 @@
 </head>
 <body>
 
-    <h1>🥏 모바일 윷놀이</h1>
+    <div class="app-shell">
+        <h1>🥏 모바일 윷놀이</h1>
 
     <!-- 1. 설정 화면 -->
     <div id="setupArea">
@@ -475,6 +481,7 @@
 
     <!-- 5. 폭죽 캔버스 -->
     <canvas id="confettiCanvas"></canvas>
+    </div>
 
     <script>
         // --- 0. 사운드 관리 객체 (Web Audio API) ---
