@@ -1401,38 +1401,42 @@
                 
                 // 모든 말들을 함께 이동
                 let anyFinished = false;
+                const firstTokenResult = simulateMove(selectedToken, score);
+                
                 tokensToMove.forEach(token => {
                     const result = simulateMove(token, score);
-                    
                     token.index = result.finalIdx;
                     token.location = result.loc;
                     token.finished = result.finished;
-                    
-                    if (result.catch) {
-                        teams.forEach((t, tIdx) => {
-                            if (tIdx === gameState.currentTeamIdx) return;
-                            t.tokens.forEach(enemy => {
-                                if (!enemy.finished && enemy.index !== 0 &&
-                                    enemy.index === token.index && enemy.location === token.location) {
-                                    
-                                    // 방어막 체크
-                                    if (enemy.shielded) {
-                                        enemy.shielded = false;
-                                        showMessage("🛡️ 방어막이 상대를 보호했습니다!", "#2e7d32");
-                                    } else {
-                                        enemy.index = 0;
-                                        enemy.location = 'outer';
-                                        caughtSomething = true;
-                                        // 잡으면 SP 보너스
-                                        if (isPowerUpMode) currentTeam.sp = Math.min(5, currentTeam.sp + 1);
-                                    }
-                                }
-                            });
-                        });
-                    }
-                    
                     if (token.finished) anyFinished = true;
                 });
+
+                // 잡기 판정은 한 번만 수행
+                if (firstTokenResult.catch) {
+                    teams.forEach((t, tIdx) => {
+                        if (tIdx === gameState.currentTeamIdx) return;
+                        t.tokens.forEach(enemy => {
+                            if (!enemy.finished && enemy.index !== 0 &&
+                                enemy.index === firstTokenResult.finalIdx && enemy.location === firstTokenResult.loc) {
+                                
+                                if (enemy.shielded) {
+                                    enemy.shielded = false;
+                                    showMessage("🛡️ 방어막이 상대를 보호했습니다!", "#2e7d32");
+                                } else {
+                                    enemy.index = 0;
+                                    enemy.location = 'outer';
+                                    caughtSomething = true;
+                                    if (isPowerUpMode) currentTeam.sp = Math.min(5, currentTeam.sp + 1);
+                                }
+                            }
+                        });
+                    });
+                }
+                
+                if (anyFinished) {
+                    SoundEffect.playGoodThrow();
+                    showMessage("🏁 말이 완주했습니다!", "#1976d2");
+                }
                 
                 if (anyFinished) {
                     SoundEffect.playGoodThrow();
@@ -1755,9 +1759,10 @@
                 );
 
                 tokensToMove.forEach(t => {
-                    t.index = preview.finalIdx;
-                    t.location = preview.loc;
-                    t.finished = preview.finished;
+                    const res = simulateMove(t, 2);
+                    t.index = res.finalIdx;
+                    t.location = res.loc;
+                    t.finished = res.finished;
                 });
 
                 let caughtSomething = false;
@@ -1769,7 +1774,7 @@
                                 enemy.index === preview.finalIdx && enemy.location === preview.loc) {
                                 if (enemy.shielded) {
                                     enemy.shielded = false;
-                                    showMessage("⚡ 부스트 공격이 상대 🛡️방어막에 막혔습니다!", "#2e7d32");
+                                    showMessage("🛡️ 방어막이 상대를 보호했습니다!", "#2e7d32");
                                 } else {
                                     enemy.index = 0;
                                     enemy.location = 'outer';
