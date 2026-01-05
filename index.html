@@ -1123,7 +1123,8 @@
                 catch: false, 
                 finalIdx: 0,
                 invalidMove: false,
-                movedForward: false
+                movedForward: false,
+                canTakeShortcut: false
             };
 
             // 백도 처리 (steps === -1)
@@ -1156,6 +1157,7 @@
                     if (sim.loc === 'outer') {
                         sim.idx++;
                         if (sim.idx > 20) { sim.finished = true; break; }
+                        if (sim.idx === 10 && i < steps - 1) sim.canTakeShortcut = true;
                     } 
                     else if (sim.loc === 'shortcut_1') {
                         if (sim.idx === 5) sim.idx = 21;
@@ -1179,7 +1181,7 @@
                     if (sim.idx === 5 && sim.movedForward) {
                         sim.loc = 'shortcut_1';
                         sim.idx = 21;
-                    } else if (sim.idx === 10) {
+                    } else if (sim.idx === 10 && sim.canTakeShortcut) {
                         sim.loc = 'shortcut_2';
                         sim.idx = 26;
                     }
