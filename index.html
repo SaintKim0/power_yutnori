@@ -1175,7 +1175,7 @@
                     if (sim.loc === 'outer') {
                         sim.idx++;
                         if (sim.idx > 20) { sim.finished = true; break; }
-                        if (sim.idx === 10 && i < steps - 1) sim.canTakeShortcut = true;
+                        if ((sim.idx === 5 || sim.idx === 10) && i < steps - 1) sim.canTakeShortcut = true;
                     } 
                     else if (sim.loc === 'shortcut_1') {
                         if (sim.idx === 5) sim.idx = 21;
@@ -1196,12 +1196,14 @@
             // 도착지에서 지름길 판정
             if (!sim.finished && !sim.invalidMove) {
                  if (sim.loc === 'outer') {
-                    if (sim.idx === 5 && sim.movedForward) {
+                    if (sim.idx === 5 && sim.movedForward && sim.canTakeShortcut) {
                         sim.loc = 'shortcut_1';
                         sim.idx = 21;
+                        sim.canTakeShortcut = false;
                     } else if (sim.idx === 10 && sim.canTakeShortcut) {
                         sim.loc = 'shortcut_2';
                         sim.idx = 26;
+                        sim.canTakeShortcut = false;
                     }
                 } else if (sim.loc === 'shortcut_1' && sim.idx === 23) {
                     sim.loc = 'shortcut_2';
