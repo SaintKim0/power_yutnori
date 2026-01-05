@@ -667,14 +667,14 @@
             if (teams.length >= 4) return;
             const c = TEAM_COLORS[colorIdx];
             // 토큰 생성은 게임 시작 시 확정된 개수로 재생성함 (여기선 임시 구조만)
-                teams.push({ 
-                    id: teams.length, 
-                    name: c.name, 
-                    color: c.code, 
-                    tokens: [],
-                    remainingUndos: 2,
-                    isAi: false 
-                });
+            teams.push({ 
+                id: teams.length, 
+                name: c.name, 
+                color: c.code, 
+                tokens: [],
+                remainingUndos: 2,
+                isAi: false 
+            });
         }
 
         function addTeam() {
@@ -739,7 +739,7 @@
                 // 말 개수에 맞춰 토큰 재생성
                 t.tokens = [];
                 for(let i=0; i<tokensPerTeam; i++) {
-                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, pendingShortcut: false });
+                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false });
                 }
             });
 
@@ -803,8 +803,6 @@
             animId = requestAnimationFrame(loopGauge);
         }
 
-        let isBonusRound = false;
-
         function stopGauge() {
             isCharging = false;
             cancelAnimationFrame(animId);
@@ -820,13 +818,11 @@
 
             if (finalPower <= 10) {
                 SoundEffect.playFail();
-                if (isBonusRound) handleBonusFail();
-                else handleFail("❌ 힘 부족 (실격)", "너무 약했습니다.");
+                handleFail("❌ 힘 부족 (실격)", "너무 약했습니다.");
             }
             else if (finalPower >= 90) {
                 SoundEffect.playFail();
-                if (isBonusRound) handleBonusFail();
-                else handleFail("⚠️ 낙장!", "힘이 너무 셌습니다.");
+                handleFail("⚠️ 낙장!", "힘이 너무 셌습니다.");
             }
             else {
                 calculateYutResult();
@@ -939,18 +935,6 @@
             setTimeout(() => { nextTurn(); }, 1500);
         }
 
-        function handleBonusFail() {
-            if (gameState.moveQueue.length > 0) {
-                gameState.moveQueue.pop();
-            }
-            isBonusRound = false;
-            mainResult.innerText = "보너스 던지기 무효";
-            subResult.innerText = "기존 결과로 이동하세요.";
-            setTimeout(() => {
-                prepareMoveStep();
-            }, 800);
-        }
-
         function calculateYutResult() {
             let flatCount = 0;
             let results = [];
@@ -996,7 +980,6 @@
             }
             
             gameState.moveQueue.push({ id: Date.now(), score: score, text: text });
-            isBonusRound = (score >= 4);
 
             // 소리 재생
             if (score >= 4) SoundEffect.playGoodThrow(); // 윷,모
@@ -1046,7 +1029,6 @@
                  nextTurn();
             }
             maybeTriggerAi();
-            isBonusRound = false;
         }
 
         function updateAvailableMovesUI() {
@@ -1140,22 +1122,8 @@
                 finished: false, 
                 catch: false, 
                 finalIdx: 0,
-                invalidMove: false,
-                movedForward: false
+                invalidMove: false
             };
-            let remainingSteps = steps;
-            let shortcutPending = token.pendingShortcut;
-            if (shortcutPending && steps > 0) {
-                if (token.index === 5) {
-                    sim.loc = 'shortcut_1';
-                    sim.idx = 21;
-                } else if (token.index === 10) {
-                    sim.loc = 'shortcut_2';
-                    sim.idx = 26;
-                }
-                shortcutPending = false;
-                remainingSteps--;
-            }
 
             // 백도 처리 (steps === -1)
             if (steps === -1) {
@@ -1171,19 +1139,23 @@
                         sim.idx--;
                     }
                 } else if (sim.loc === 'shortcut_1') {
-                    if (sim.idx === 21) { sim.idx = 5; sim.loc = 'outer'; } // 다시 코너로
+                    if (sim.idx === 21 || sim.idx === 5) { 
+                        sim.idx = 4; 
+                        sim.loc = 'outer'; 
+                    } // 지름길 입구나 코너에서 뒤로가면 외곽 4번
                     else if (sim.idx === 23) sim.idx = 22; // 중앙에서 뒤로
                     else sim.idx--;
                 } else if (sim.loc === 'shortcut_2') {
-                    if (sim.idx === 26) { sim.idx = 10; sim.loc = 'outer'; }
+                    if (sim.idx === 26 || sim.idx === 10) { 
+                        sim.idx = 9; 
+                        sim.loc = 'outer'; 
+                    } // 지름길 입구나 코너에서 뒤로가면 외곽 9번
                     else if (sim.idx === 23) sim.idx = 27; // 중앙에서 뒤로
                     else sim.idx--;
                 }
             } else {
                 // 일반 이동
-                let forward = false;
-                for(let i=0; i<remainingSteps; i++) {
-                    forward = true;
+                for(let i=0; i<steps; i++) {
                     if (sim.loc === 'outer') {
                         sim.idx++;
                         if (sim.idx > 20) { sim.finished = true; break; }
@@ -1201,18 +1173,15 @@
                         else sim.idx++;
                     }
                 }
-                sim.movedForward = forward;
             }
             
             // 도착지에서 지름길 판정
             if (!sim.finished && !sim.invalidMove) {
                  if (sim.loc === 'outer') {
-                    if (sim.idx === 5 && sim.movedForward) {
+                    if (sim.idx === 5) {
                         sim.loc = 'shortcut_1';
-                        sim.idx = 21;
                     } else if (sim.idx === 10) {
                         sim.loc = 'shortcut_2';
-                        sim.idx = 26;
                     }
                 } else if (sim.loc === 'shortcut_1' && sim.idx === 23) {
                     sim.loc = 'shortcut_2';
@@ -1292,7 +1261,6 @@
                     token.index = result.finalIdx;
                     token.location = result.loc;
                     token.finished = result.finished;
-                    token.pendingShortcut = (token.location === 'outer' && (token.index === 5 || token.index === 10));
                     
                     if (result.catch) {
                         teams.forEach((t, tIdx) => {
