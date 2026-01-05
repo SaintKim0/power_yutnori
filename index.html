@@ -638,6 +638,7 @@
 
         let gameMode = 'multi';
         let aiTimeoutId = null;
+        let aiMoveTimeoutId = null; // AI 이동 전용 타이머 분리
         const aiActionDelay = 1200;
 
         // --- 2. 초기화 및 설정 로직 ---
@@ -866,17 +867,18 @@
             // 5. 지름길 가중치
             if (preview.loc === 'shortcut_1') value += 300;
             if (preview.loc === 'shortcut_2') value += 350;
-            if (preview.loc === 'shortcut_1' && preview.finalIdx === 23) value += 150; // 중앙 지점 가중치
+            // 중앙 지점(23)은 shortcut_2 상태임
+            if (preview.finalIdx === 23) value += 150; 
             
             // 6. 패 자체 가중치
             if (moveObj.score >= 4) value += 150;
-            if (moveObj.score === -1) value += 50; // 백도 전략적 활용
+            if (moveObj.score === -1) value += 50; 
             
-            // 7. 위험도 감점 (상대방에게 잡힐 거리인가?)
+            // 7. 위험도 감점
             const threat = enemyCaptureThreat(preview);
-            value -= threat * 1.5; // 위험하면 감점 대폭 강화
+            value -= threat * 1.5; 
             
-            // 8. 미래 기대값 (다음 턴 유리함)
+            // 8. 미래 기대값
             value += simulateFuturePotential(preview) * 0.5;
             
             // 9. 골인 지점 근처 보호
@@ -890,45 +892,39 @@
             if (!currentTeam || !currentTeam.isAi) return;
             
             if (gameState.moveQueue.length === 0) {
-                nextTurn();
+                if (gameState.step === 'MOVE') nextTurn();
                 return;
             }
 
             let bestChoice = { moveId: null, tokenIdx: -1, value: -Infinity };
 
-            // 모든 가능한 패(Move)와 모든 말(Token)의 조합을 전수 조사
+            // 모든 패와 말 조합 시뮬레이션
             gameState.moveQueue.forEach(moveObj => {
                 currentTeam.tokens.forEach((token, idx) => {
                     if (token.finished) return;
-                    
                     const evaluation = evaluateAiMove(token, moveObj);
                     if (evaluation.value > bestChoice.value) {
-                        bestChoice = {
-                            moveId: moveObj.id,
-                            tokenIdx: idx,
-                            value: evaluation.value
-                        };
+                        bestChoice = { moveId: moveObj.id, tokenIdx: idx, value: evaluation.value };
                     }
                 });
             });
 
-            // 가장 좋은 조합이 발견되었다면 실행
-            if (bestChoice.moveId !== null && bestChoice.tokenIdx !== -1) {
-                // 1. 먼저 패를 선택 (시각적 피드백)
-                selectMove(bestChoice.moveId);
-                
-                // 2. 약간의 시간차를 두고 실제 이동 실행
-                if (aiTimeoutId) clearTimeout(aiTimeoutId);
-                aiTimeoutId = setTimeout(() => {
-                    executeMove(bestChoice.tokenIdx, bestChoice.moveId);
-                }, 600);
-            } else {
-                // 이동 가능한 조합이 전혀 없으면 현재 남은 패 중 하나를 강제 소멸
+            // 유효한 이동이 하나도 없는 경우 (예: 백도만 있는데 모든 말이 시작점)
+            if (bestChoice.moveId === null) {
                 const firstMove = gameState.moveQueue[0];
-                if (firstMove) {
-                    executeMove(-1, firstMove.id);
-                }
+                executeMove(-1, firstMove.id);
+                return;
             }
+
+            // 1. 패 선택 시각화
+            selectMove(bestChoice.moveId);
+            
+            // 2. 전용 타이머를 사용하여 이동 실행 (다른 타이머에 의해 취소되지 않음)
+            if (aiMoveTimeoutId) clearTimeout(aiMoveTimeoutId);
+            aiMoveTimeoutId = setTimeout(() => {
+                executeMove(bestChoice.tokenIdx, bestChoice.moveId);
+                aiMoveTimeoutId = null;
+            }, 600);
         }
 
         function maybeTriggerAi() {
@@ -1246,6 +1242,8 @@
             };
 
             const moveIndex = gameState.moveQueue.findIndex(m => m.id === moveId);
+            if (moveIndex === -1) return; // 패를 찾을 수 없으면 중단 (중복 실행 방지)
+
             const score = gameState.moveQueue[moveIndex].score;
             gameState.moveQueue.splice(moveIndex, 1);
             gameState.selectedMoveId = null;
