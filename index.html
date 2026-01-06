@@ -474,14 +474,14 @@
                 <button class="btn-skill" onclick="useSkill('reroll')" id="skillReroll"><span class="skill-icon">🔄</span><span>재도전</span><span class="skill-cost">1 SP</span></button>
                 <button class="btn-skill" onclick="useSkill('boost')" id="skillBoost"><span class="skill-icon">⚡</span><span>부스트</span><span class="skill-cost">2 SP</span></button>
             </div>
-            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px;">
+                <div id="availableMoves" style="display:flex; gap:4px;"></div>
                 <div class="yut-container" id="yutContainer" style="margin-bottom: 0;"><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div></div>
                 <div class="result-text" id="mainResult" style="margin: 0; height: auto;">준비</div>
             </div>
             <div class="info-text" id="subResult">버튼을 눌러 힘을 조절하세요!</div>
             <div id="gaugeArea"><div class="gauge-wrapper"><div class="zone zone-weak">약함</div><div class="zone zone-safe">성공</div><div class="zone zone-over">낙장</div><div class="power-bar" id="powerBar"></div></div></div>
             <div id="moveArea" style="display: none;">
-                <div style="font-size:0.8rem; font-weight:700; color:#86868b; margin-bottom:6px; text-align:left; padding-left:4px;">패 선택</div><div id="availableMoves" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:10px;"></div>
                 <div id="moveOptions"></div>
             </div>
             <div class="action-btn-row" style="display: flex; gap: 8px; margin-top: 10px; width: 100%; align-items: stretch;">
