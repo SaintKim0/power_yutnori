@@ -414,9 +414,8 @@
 <body>
 
     <div class="app-shell">
-        <h1>🥏 모바일 윷놀이</h1>
-
     <div id="setupArea">
+        <h1 style="margin-bottom: 15px;">🥏 모바일 윷놀이</h1>
         <h2 style="margin-top:0; font-weight:800; letter-spacing:-0.03em; font-size: 1.2rem;">게임 설정</h2>
         
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -458,6 +457,7 @@
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
+        <h1 style="margin: 5px 0; font-size: 1rem; flex-shrink: 0;">🥏 모바일 윷놀이</h1>
         <div class="board-section">
             <svg id="yutBoard" viewBox="0 0 400 400">
                 <path d="M 350 350 L 350 50 L 50 50 L 50 350 L 350 350" class="board-line" />
@@ -520,14 +520,20 @@
             // 실제 기기의 가용 높이를 더 보수적으로 계산
             const vh = window.innerHeight;
             const vw = window.innerWidth;
-            const header = document.querySelector('h1');
+            
+            // 현재 활성화된 화면의 제목 요소를 찾음
+            const activeTitle = (gameState.step === 'SETUP') ? 
+                document.querySelector('#setupArea h1') : 
+                document.querySelector('#gameWrapper h1');
+            
             const control = document.querySelector('.control-section');
             
-            // 헤더, 컨트롤러, 그리고 실제 폰의 상하단 UI 공간을 더 압축적으로 계산
-            let occupiedH = (header ? header.offsetHeight : 0) + (control ? control.offsetHeight : 0) + 30;
+            // 제목, 컨트롤러, 그리고 상하단 UI 여백을 합쳐서 계산
+            let occupiedH = (activeTitle ? activeTitle.offsetHeight : 0) + 
+                            (control && gameState.step !== 'SETUP' ? control.offsetHeight : 0) + 20;
             
             const availableH = vh - occupiedH;
-            // 가로 너비를 98%까지 활용하고, 세로 가용 높이를 최대한 사용
+            // 가로 너비를 최대한 활용하면서 세로 가용 높이에 맞춤
             const boardSize = Math.min(vw * 0.98, availableH * 0.98, 550);
             document.documentElement.style.setProperty('--board-size', `${boardSize}px`);
         }
