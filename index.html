@@ -107,10 +107,10 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            max-width: var(--board-size, min(90vw, 38vh));
-            max-height: var(--board-size, min(90vw, 38vh));
+            max-width: var(--board-size, 98vw);
+            max-height: var(--board-size, 98vw);
             aspect-ratio: 1/1;
-            padding: 5px;
+            padding: 2px;
             flex-shrink: 1;
             margin: 0 auto;
         }
@@ -499,7 +499,7 @@
                 occupiedH += (control ? control.offsetHeight : 0) + 20;
             }
             const availableH = vh - occupiedH;
-            const boardSize = Math.min(vw * 0.95, availableH, 450);
+            const boardSize = Math.min(vw * 0.98, availableH, 500);
             document.documentElement.style.setProperty('--board-size', `${boardSize}px`);
         }
         window.addEventListener('resize', optimizeLayout);
