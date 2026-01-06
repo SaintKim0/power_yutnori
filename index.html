@@ -28,12 +28,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+            min-height: 100dvh;
             margin: 0;
-            padding: 3px;
+            padding: 0;
             box-sizing: border-box;
             color: #1d1d1f;
-            overflow-x: hidden;
+            overflow: hidden;
             touch-action: manipulation;
             -webkit-user-select: none;
             user-select: none;
@@ -42,17 +43,23 @@
 
         .app-shell {
             width: 100%;
-            max-width: 100%;
-            transform: scale(0.8);
-            transform-origin: top center;
+            max-width: 500px;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         h1 {
             color: var(--primary-color);
-            margin: 4px 0 8px 0;
+            margin: 10px 0;
             font-weight: 700;
             letter-spacing: -0.02em;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         #setupArea, .control-section, .board-section {
@@ -62,32 +69,52 @@
             border-radius: 24px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.05);
             border: 1px solid rgba(255,255,255,0.3);
-            margin-top: 10px;
-            padding: 12px;
+            width: 100%;
+            padding: 10px;
             box-sizing: border-box;
         }
 
-        #setupArea { width: 90%; max-width: 400px; text-align: center; }
+        #setupArea { 
+            max-width: 400px; 
+            text-align: center;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
         .game-wrapper {
             display: none;
             flex-direction: column;
             align-items: center;
+            justify-content: space-between;
             width: 100%;
-            max-width: 500px;
-            gap: 12px;
-            padding-bottom: 20px;
-            margin-top: -10px;
+            height: 100%;
+            gap: 8px;
+            flex: 1;
+            overflow: hidden;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .board-section {
             display: flex;
             justify-content: center;
-            width: 92%;
+            align-items: center;
+            width: 100%;
+            max-width: min(95vw, 45vh);
             aspect-ratio: 1/1;
+            padding: 5px;
+            flex-shrink: 1;
+            margin: 0 auto;
         }
 
-        .control-section { width: 95%; text-align: center; }
+        .control-section { 
+            width: 100%; 
+            max-width: 450px;
+            text-align: center;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
 
         .status-bar {
             background: rgba(0,0,0,0.03);
