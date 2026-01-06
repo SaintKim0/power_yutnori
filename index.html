@@ -420,39 +420,49 @@
         <h1 style="margin-bottom: 15px;">🥏 모바일 윷놀이</h1>
         <h2 style="margin-top:0; font-weight:800; letter-spacing:-0.03em; font-size: 1.2rem;">게임 설정</h2>
         
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
             <div class="input-group" style="flex: 1; margin: 0; padding: 12px;"><label for="tokenCountInput" style="font-size: 0.8rem;">말 개수</label><input type="number" id="tokenCountInput" value="2" min="1" max="5" inputmode="numeric"></div>
             <div class="input-group" style="flex: 1; margin: 0; padding: 12px;"><label for="undoCountInput" style="font-size: 0.8rem;">물리기 횟수</label><input type="number" id="undoCountInput" value="2" min="0" max="10" inputmode="numeric"></div>
         </div>
 
-        <div class="input-group" style="padding: 12px;">
-            <label for="modeSelect" style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
-                플레이 모드
-                <span id="aiDifficultyDisplay" style="display: none; color: var(--accent-color); font-size: 0.75rem; cursor: pointer; background: rgba(0,113,227,0.1); padding: 2px 8px; border-radius: 8px;" onclick="showAiDifficultyModal()">🤖 보통 ⚙️</span>
-            </label>
-            <select id="modeSelect" style="font-size: 0.85rem;">
-                <option value="multi">멀티플레이 (다수 팀)</option>
-                <option value="ai">AI와 플레이 (혼자용)</option>
-                <option value="online">온라인 대전 (베타)</option>
-            </select>
+        <!-- 플레이 모드 대분류 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <button id="btnPlayAlone" class="btn-secondary" style="flex: 1; margin: 0; background: #f2f2f7; color: #1d1d1f; border: 1px solid rgba(0,0,0,0.1);" onclick="selectTopMode('alone')">👤 혼자하기</button>
+            <button id="btnPlayTogether" class="btn-secondary" style="flex: 1; margin: 0; background: #f2f2f7; color: #1d1d1f; border: 1px solid rgba(0,0,0,0.1);" onclick="selectTopMode('together')">👥 같이하기</button>
         </div>
 
-        <div id="onlineArea" class="input-group" style="display: none; padding: 12px; background: rgba(0,113,227,0.05); border: 1px solid rgba(0,113,227,0.2);">
-            <label style="font-size: 0.8rem; color: var(--accent-color);">🌐 온라인 대전 설정</label>
-            <input type="text" id="playerNameInput" placeholder="닉네임 입력" style="margin-bottom: 8px;">
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="createOnlineRoom()">방 만들기</button>
-                <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="showJoinRoomPrompt()">방 참가</button>
-            </div>
-            <div id="roomInfoDisplay" style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--accent-color); display: none;"></div>
+        <!-- 혼자하기 서브 메뉴 (AI 난이도) -->
+        <div id="aloneSubMenu" style="display: none; margin-bottom: 15px; padding: 15px; background: rgba(0,113,227,0.05); border-radius: 18px; border: 1px solid rgba(0,113,227,0.1); text-align: center;">
+            <p style="margin: 0 0 10px 0; font-size: 0.85rem; font-weight: 700; color: var(--accent-color);">🤖 AI 캐릭터 선택</p>
+            <button id="aiDifficultyDisplay" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--accent-color); background: white; color: var(--accent-color); font-weight: 700; cursor: pointer;" onclick="showAiDifficultyModal()">🤖 보통 ⚙️</button>
         </div>
 
-        <div style="margin-bottom: 15px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <p style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0;">참가 팀 (최대 4팀)</p>
-                <button id="btnAddTeam" class="btn-secondary" style="width:auto; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0; padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;" onclick="addTeam()">+ 팀 추가</button>
+        <!-- 같이하기 서브 메뉴 (오프라인/온라인 선택) -->
+        <div id="togetherSubMenu" style="display: none; margin-bottom: 15px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button id="btnOffline" class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.8rem; background: #fff; border: 1px solid rgba(0,0,0,0.1);" onclick="selectSubMode('multi')">📱 오프라인(다수팀)</button>
+                <button id="btnOnline" class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.8rem; background: #fff; border: 1px solid rgba(0,0,0,0.1);" onclick="selectSubMode('online')">🌐 온라인 대전</button>
             </div>
-            <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 0;"></ul>
+            
+            <!-- 오프라인 팀 설정 -->
+            <div id="offlineArea" style="display: none; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <p style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0;">참가 팀 (최대 4팀)</p>
+                    <button id="btnAddTeam" class="btn-secondary" style="width:auto; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0; padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;" onclick="addTeam()">+ 팀 추가</button>
+                </div>
+                <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 0;"></ul>
+            </div>
+
+            <!-- 온라인 대전 설정 -->
+            <div id="onlineArea" class="input-group" style="display: none; padding: 12px; background: rgba(0,113,227,0.05); border: 1px solid rgba(0,113,227,0.2);">
+                <label style="font-size: 0.8rem; color: var(--accent-color);">🌐 온라인 대전 설정</label>
+                <input type="text" id="playerNameInput" placeholder="닉네임 입력" style="margin-bottom: 8px;">
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="createOnlineRoom()">방 만들기</button>
+                    <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="showJoinRoomPrompt()">방 참가</button>
+                </div>
+                <div id="roomInfoDisplay" style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--accent-color); display: none;"></div>
+            </div>
         </div>
 
         <div class="input-group" style="padding: 12px;"><label style="display: flex; align-items: center; cursor: pointer; font-size: 0.85rem;"><input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">파워업 모드 (특수 스킬)</label></div>
@@ -462,12 +472,12 @@
             <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #86868b;">🕸️ 함정과 ✨ 스킬 규칙이 추가되었습니다.</p>
         </div>
 
-        <button class="btn-primary" onclick="initGame()">게임 시작 ▶</button>
+        <button id="btnStartGame" class="btn-primary" onclick="initGame()" style="display: none;">게임 시작 ▶</button>
         <div style="display:flex; gap:10px; margin-top: 15px;">
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.5 (다인용 다시하기 개선판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.6 (UI 구조 개편판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -599,22 +609,91 @@
         let historyState = null;
         let tokensPerTeam = 2;
         let isPowerUpMode = false;
-        let gameMode = 'multi';
+        let gameMode = 'multi'; // multi, ai, online
+        let topMode = 'together'; // alone, together
         let aiDifficulty = 'normal';
-        let aiTimeoutId = null;
-        const aiActionDelay = 2500;
 
-        // 온라인 대전 관련 변수 (PeerJS 기반)
-        let peer = null;
-        let connections = []; // 호스트일 경우 모든 클라이언트 연결 저장
-        let conn = null; // 클라이언트일 경우 호스트와의 연결 저장
-        let isHost = false;
-        let isOnlineMode = false;
-        let onlineRoomId = null;
-        let myTeamIdx = null; 
-        let onlinePlayerName = "플레이어";
+        function selectTopMode(mode) {
+            SoundEffect.playClick();
+            topMode = mode;
+            
+            const btnAlone = document.getElementById('btnPlayAlone');
+            const btnTogether = document.getElementById('btnPlayTogether');
+            const aloneSub = document.getElementById('aloneSubMenu');
+            const togetherSub = document.getElementById('togetherSubMenu');
+            const btnStart = document.getElementById('btnStartGame');
 
-        function initSetup() { addTeamData(0); addTeamData(1); renderTeamSetup(); }
+            if (mode === 'alone') {
+                btnAlone.style.background = 'var(--accent-color)';
+                btnAlone.style.color = 'white';
+                btnTogether.style.background = '#f2f2f7';
+                btnTogether.style.color = '#1d1d1f';
+                
+                aloneSub.style.display = 'block';
+                togetherSub.style.display = 'none';
+                btnStart.style.display = 'block';
+                gameMode = 'ai';
+                
+                // 팀 초기화 (2팀 고정)
+                if (teams.length > 2) teams = teams.slice(0, 2);
+                renderTeamSetup();
+                showAiDifficultyModal();
+            } else {
+                btnTogether.style.background = 'var(--accent-color)';
+                btnTogether.style.color = 'white';
+                btnAlone.style.background = '#f2f2f7';
+                btnAlone.style.color = '#1d1d1f';
+                
+                togetherSub.style.display = 'block';
+                aloneSub.style.display = 'none';
+                btnStart.style.display = 'none'; // 서브 모드(온라인/오프라인)를 골라야 시작 버튼 보임
+            }
+        }
+
+        function selectSubMode(mode) {
+            SoundEffect.playClick();
+            gameMode = mode;
+            
+            const btnOffline = document.getElementById('btnOffline');
+            const btnOnline = document.getElementById('btnOnline');
+            const offlineArea = document.getElementById('offlineArea');
+            const onlineArea = document.getElementById('onlineArea');
+            const btnStart = document.getElementById('btnStartGame');
+            const btnAdd = document.getElementById('btnAddTeam');
+
+            if (mode === 'multi') {
+                btnOffline.style.background = 'var(--accent-color)';
+                btnOffline.style.color = 'white';
+                btnOnline.style.background = '#fff';
+                btnOnline.style.color = '#1d1d1f';
+                
+                offlineArea.style.display = 'block';
+                onlineArea.style.display = 'none';
+                btnAdd.disabled = false;
+                btnAdd.style.opacity = "1";
+            } else {
+                btnOnline.style.background = 'var(--accent-color)';
+                btnOnline.style.color = 'white';
+                btnOffline.style.background = '#fff';
+                btnOffline.style.color = '#1d1d1f';
+                
+                onlineArea.style.display = 'block';
+                offlineArea.style.display = 'none';
+                btnAdd.disabled = true;
+                btnAdd.style.opacity = "0.4";
+                initP2P();
+            }
+            btnStart.style.display = 'block';
+        }
+
+        function initSetup() { 
+            addTeamData(0); 
+            addTeamData(1); 
+            renderTeamSetup(); 
+            // 기본값으로 '같이하기' -> '오프라인' 선택 상태로 시작
+            selectTopMode('together');
+            selectSubMode('multi');
+        }
         function renderTeamSetup() {
             const teamList = document.getElementById('teamList');
             teamList.innerHTML = "";
@@ -625,36 +704,14 @@
                 </li>`; 
             });
             const btnAdd = document.getElementById('btnAddTeam');
-            btnAdd.disabled = (teams.length >= 4 || gameMode === 'ai');
-            btnAdd.style.opacity = (teams.length >= 4 || gameMode === 'ai') ? "0.4" : "1";
-            // 추가: 팀이 4팀이면 버튼 숨기기
+            const isAddDisabled = (teams.length >= 4 || gameMode === 'ai' || gameMode === 'online');
+            btnAdd.disabled = isAddDisabled;
+            btnAdd.style.opacity = isAddDisabled ? "0.4" : "1";
             btnAdd.style.display = teams.length >= 4 ? 'none' : 'block';
         }
         function addTeamData(colorIdx) { if (teams.length >= 4) return; const c = TEAM_COLORS[colorIdx]; teams.push({ id: teams.length, name: c.name, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }); }
         function addTeam() { SoundEffect.playClick(); if (teams.length >= 4) return alert("최대 4팀"); addTeamData(teams.length); renderTeamSetup(); }
         function removeTeam(idx) { SoundEffect.playClick(); teams.splice(idx, 1); teams.forEach((t, i) => { t.id = i; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); renderTeamSetup(); }
-
-        const modeSelect = document.getElementById('modeSelect');
-        modeSelect.addEventListener('change', () => {
-            gameMode = modeSelect.value;
-            document.getElementById('btnAddTeam').disabled = (gameMode === 'ai' || gameMode === 'online');
-            const display = document.getElementById('aiDifficultyDisplay');
-            const onlineArea = document.getElementById('onlineArea');
-            
-            if (gameMode === 'ai') {
-                display.style.display = 'inline-block';
-                onlineArea.style.display = 'none';
-                showAiDifficultyModal();
-                if (teams.length > 2) { teams = teams.slice(0, 2); renderTeamSetup(); }
-            } else if (gameMode === 'online') {
-                display.style.display = 'none';
-                onlineArea.style.display = 'block';
-                initP2P();
-            } else {
-                display.style.display = 'none';
-                onlineArea.style.display = 'none';
-            }
-        });
 
         function initP2P(customId, callback) {
             if (peer && peer.open) {
@@ -920,8 +977,9 @@
             const params = new URLSearchParams(window.location.search);
             const roomCode = params.get('room');
             if (roomCode) {
-                document.getElementById('modeSelect').value = 'online';
-                document.getElementById('modeSelect').dispatchEvent(new Event('change'));
+                // 온라인 모드로 강제 설정
+                selectTopMode('together');
+                selectSubMode('online');
                 setTimeout(() => joinOnlineRoom(roomCode.trim().toUpperCase()), 1200);
             }
         }
@@ -1215,7 +1273,7 @@
             tokensPerTeam = state.tokensPerTeam;
             gameState.maxUndos = state.maxUndos;
             isPowerUpMode = state.isPowerUpMode;
-            gameMode = modeSelect.value;
+            // gameMode = modeSelect.value; // 제거
             isOnlineMode = (gameMode === 'online');
 
             // 온라인 모드일 때 팀 정보 동기화
