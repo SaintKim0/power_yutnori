@@ -546,7 +546,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.7 (프로필 설정 기능 추가판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.8 (방 만들기 버그 수정판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -878,90 +878,6 @@
         function addTeam() { SoundEffect.playClick(); if (teams.length >= 4) return alert("최대 4팀"); addTeamData(teams.length); renderTeamSetup(); }
         function removeTeam(idx) { SoundEffect.playClick(); teams.splice(idx, 1); teams.forEach((t, i) => { t.id = i; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); renderTeamSetup(); }
 
-        function initP2P(customId, callback) {
-            if (peer && peer.open) {
-                if (callback) callback();
-                return;
-            }
-            
-            // ID가 있으면(방장) 해당 ID로, 없으면(참가자) 서버에서 주는 랜덤 ID 사용
-            peer = customId ? new Peer(customId) : new Peer();
-            
-            peer.on('open', (id) => {
-                console.log('My peer ID is: ' + id);
-                if (callback) callback();
-            });
-
-            peer.on('error', (err) => {
-                console.error('PeerJS Error:', err);
-                if (err.type === 'peer-disconnected') showToast("연결 끊김", "서버와의 연결이 끊겼습니다.");
-                else if (err.type === 'unavailable-id') {
-                    if (isHost) {
-                        // 방장인데 ID 중복이면 재시도
-                        createOnlineRoom();
-                    } else {
-                        showToast("오류", "이미 사용 중인 방 코드입니다.");
-                    }
-                }
-                else if (err.type === 'peer-not-found') showToast("오류", "방을 찾을 수 없습니다. 코드를 확인하세요.");
-                else showToast("연결 오류", "네트워크 상태를 확인해주세요.");
-            });
-
-            peer.on('connection', (newConn) => {
-                if (!isHost) {
-                    newConn.close();
-                    return;
-                }
-                setupConnection(newConn);
-            });
-        }
-
-        function setupConnection(c) {
-            // 연결이 열리면 리스트에 추가
-            c.on('open', () => {
-                connections.push(c);
-                console.log("Connected to: " + c.peer);
-            });
-
-            c.on('data', (data) => {
-                if (data.type === 'join') {
-                    // 방장 입장에서 새 참가자 처리
-                    const teamIdx = teams.length;
-                    if (teamIdx >= 4) {
-                        c.send({ type: 'error', msg: '방이 가득 찼습니다.' });
-                        return;
-                    }
-                    
-                    const color = TEAM_COLORS[teamIdx % 4];
-                    teams.push({ id: teamIdx, name: data.playerName, color: color.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
-                    
-                    // 새 참가자를 포함한 모든 사람에게 리스트 전송
-                    setTimeout(() => {
-                        broadcast({
-                            type: 'playerList',
-                            teams: teams.map(t => ({ name: t.name, color: t.color })),
-                            newPlayer: data.playerName
-                        });
-                    }, 500);
-                    
-                    renderTeamSetup();
-                    showToast("새 플레이어 입장", `${data.playerName}님이 입장했습니다.`);
-                } else if (data.type === 'action') {
-                    handleRemoteAction(data.action);
-                    if (isHost) {
-                        connections.forEach(connItem => {
-                            if (connItem.peer !== c.peer) connItem.send({ type: 'action', action: data.action });
-                        });
-                    }
-                }
-            });
-
-            c.on('close', () => {
-                showToast("연결 종료", "플레이어 한 명이 나갔습니다.");
-                connections = connections.filter(connItem => connItem.peer !== c.peer);
-            });
-        }
-
         let isConnecting = false;
 
         function initP2P(customId, callback) {
@@ -1055,9 +971,7 @@
                         });
                     }
                 } else if (data.type === 'restartRequest') {
-                    // 호스트가 요청을 받으면 다른 참가자들에게 전파하거나 본인이 수락
                     showRestartConfirm();
-                    // 다른 참가자들에게도 알림 (다인 모드 대비)
                     connections.forEach(connItem => {
                         if (connItem.peer !== c.peer && connItem.open) {
                             connItem.send({ type: 'restartRequest' });
@@ -1065,7 +979,6 @@
                     });
                 } else if (data.type === 'restartResponse') {
                     handleHostRestartVote(data.peerId, data.accepted);
-                    // 다른 참가자들에게도 전파
                     connections.forEach(connItem => {
                         if (connItem.peer !== c.peer && connItem.open) {
                             connItem.send({ type: 'restartResponse', accepted: data.accepted, peerId: data.peerId });
@@ -1088,7 +1001,11 @@
         }
 
         function createOnlineRoom() {
-            if (isConnecting) return;
+            // 연결 중이면 대기 알림만 주고 리턴하지 않음 (initP2P에서 처리)
+            if (isConnecting) {
+                showToast("연결 준비 중", "잠시만 기다려주세요...");
+            }
+            
             onlinePlayerName = ProfileManager.data.nickname;
             isHost = true;
             
@@ -1157,7 +1074,10 @@
         }
 
         function joinOnlineRoom(code) {
-            if (isConnecting) return;
+            if (isConnecting) {
+                showToast("연결 준비 중", "잠시만 기다려주세요...");
+            }
+            
             onlinePlayerName = ProfileManager.data.nickname;
             isHost = false;
             onlineRoomId = code;
