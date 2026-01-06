@@ -411,6 +411,66 @@
         @media (prefers-color-scheme: dark) { .stat-row { border-bottom-color: rgba(255,255,255,0.05); } }
         .stat-label { color: #86868b; font-weight: 500; }
         .stat-value { font-weight: 700; color: var(--accent-color); }
+
+        /* 프로필 스타일 */
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .profile-container:active { transform: scale(0.98); background: #f2f2f7; }
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #f2f2f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            overflow: hidden;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-info { flex: 1; }
+        .profile-nickname { font-size: 1rem; font-weight: 800; color: #1d1d1f; margin: 0; }
+        .profile-edit-label { font-size: 0.7rem; color: var(--accent-color); font-weight: 600; margin-top: 2px; }
+        
+        #profileModal .modal-content { padding: 25px; }
+        .avatar-upload-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #f2f2f7;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid var(--accent-color);
+        }
+        .avatar-upload-box img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-upload-overlay {
+            position: absolute;
+            bottom: 0; width: 100%;
+            background: rgba(0,113,227,0.8);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -418,6 +478,16 @@
     <div class="app-shell">
     <div id="setupArea">
         <h1 style="margin-bottom: 15px;">🥏 모바일 윷놀이</h1>
+        
+        <!-- 내 프로필 영역 -->
+        <div class="profile-container" onclick="openProfileModal()">
+            <div class="profile-avatar" id="mainAvatar">👤</div>
+            <div class="profile-info">
+                <p class="profile-nickname" id="mainNickname">플레이어</p>
+                <p class="profile-edit-label">내 프로필 설정 ⚙️</p>
+            </div>
+        </div>
+
         <h2 style="margin-top:0; font-weight:800; letter-spacing:-0.03em; font-size: 1.2rem;">게임 설정</h2>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -456,8 +526,7 @@
             <!-- 온라인 대전 설정 -->
             <div id="onlineArea" class="input-group" style="display: none; padding: 12px; background: rgba(0,113,227,0.05); border: 1px solid rgba(0,113,227,0.2);">
                 <label style="font-size: 0.8rem; color: var(--accent-color);">🌐 온라인 대전 설정</label>
-                <input type="text" id="playerNameInput" placeholder="닉네임 입력" style="margin-bottom: 8px;">
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
                     <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="createOnlineRoom()">방 만들기</button>
                     <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="showJoinRoomPrompt()">방 참가</button>
                 </div>
@@ -477,7 +546,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.6 (UI 구조 개편판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.7 (프로필 설정 기능 추가판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -542,6 +611,28 @@
                     <li style="color: var(--accent-color); font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li>
 <li style="font-size: 0.8rem; margin-bottom: 5px;">* 자신의 차례에 SP를 소모하여 스킬을 사용합니다.</li><li><strong>SP 충전:</strong> 상대 말을 잡을 때마다 1 SP가 충전됩니다 (최대 5).</li><li><strong>🛡️ 방어막 (1 SP):</strong> 상대의 잡기를 1회 방어합니다.</li><li><strong>🔄 재도전 (1 SP):</strong> 패를 취소하고 다시 던집니다.</li><li><strong>⚡ 부스트 (2 SP):</strong> 즉시 2칸 전진하며, 이때 상대를 잡아도 보너스 던지기 기회를 얻습니다.</li></ul></div><button class="btn-secondary" style="width: 100%; background:#8e8e93;" onclick="closeRules()">닫기</button></div></div>
     <div id="statsModal" class="modal-overlay"><div class="modal-content"><div class="modal-title">🏆 명예의 전당</div><div style="margin-bottom: 20px;"><div class="stat-row"><span class="stat-label">총 플레이</span><span class="stat-value" id="statTotalGames">0</span></div><div class="stat-row"><span class="stat-label">승리 횟수</span><span class="stat-value" id="statWins">0</span></div><div class="stat-row"><span class="stat-label">승률</span><span class="stat-value" id="statWinRate">0%</span></div><div class="stat-row"><span class="stat-label">최다 잡기 (한 게임)</span><span class="stat-value" id="statMaxCaptures">0</span></div></div><div style="font-weight: 800; font-size: 1rem; text-align: left; margin-top: 20px; color: var(--primary-color);">🏅 업적 배지</div><div class="badge-grid" id="badgeGrid"><div class="badge-item" id="badge_FIRST_WIN"><div class="badge-icon">🥇</div><div class="badge-name">첫 승리</div></div><div class="badge-item" id="badge_YUT_GOD"><div class="badge-icon">⚡</div><div class="badge-name">윷신윷왕</div></div><div class="badge-item" id="badge_CATCH_MASTER"><div class="badge-icon">🎯</div><div class="badge-name">사냥꾼</div></div><div class="badge-item" id="badge_STACK_KING"><div class="badge-icon">🏰</div><div class="badge-name">철벽기사</div></div><div class="badge-item" id="badge_BOOST_CATCH"><div class="badge-icon">🚀</div><div class="badge-name">고속도로</div></div><div class="badge-item" id="badge_SHIELD_SUCCESS"><div class="badge-icon">🛡️</div><div class="badge-name">방어성공</div></div></div><button class="btn-primary" style="margin-top: 30px; background: #8e8e93;" onclick="closeStats()">닫기</button></div></div>
+    
+    <!-- 프로필 설정 모달 -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">프로필 설정</div>
+            <div class="avatar-upload-box" onclick="document.getElementById('avatarInput').click()">
+                <div id="editAvatar">👤</div>
+                <div class="avatar-upload-overlay">변경</div>
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+            
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label for="nicknameInput" style="font-size: 0.85rem; color: #86868b;">별명 (닉네임)</label>
+                <input type="text" id="nicknameInput" placeholder="별명을 입력하세요" maxlength="10">
+            </div>
+            
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn-primary" onclick="saveProfile()" style="flex: 1; margin: 0;">저장하기</button>
+                <button class="btn-secondary" onclick="closeProfileModal()" style="flex: 1; margin: 0; background: #8e8e93;">취소</button>
+            </div>
+        </div>
+    </div>
     
     <div id="toastModal" class="toast-modal">
         <div id="toastTitle" class="toast-title"></div>
@@ -686,7 +777,79 @@
             btnStart.style.display = 'block';
         }
 
+        // 프로필 관리 객체
+        const ProfileManager = {
+            storageKey: 'yutnori_profile',
+            data: { nickname: '플레이어', avatar: null },
+            load() {
+                const saved = localStorage.getItem(this.storageKey);
+                if (saved) {
+                    try {
+                        this.data = JSON.parse(saved);
+                        this.updateUI();
+                    } catch(e) { console.error("Profile load error", e); }
+                }
+            },
+            save(nickname, avatar) {
+                this.data = { nickname, avatar };
+                localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+                this.updateUI();
+            },
+            updateUI() {
+                document.getElementById('mainNickname').innerText = this.data.nickname;
+                const avatarHTML = this.data.avatar ? `<img src="${this.data.avatar}">` : '👤';
+                document.getElementById('mainAvatar').innerHTML = avatarHTML;
+                document.getElementById('editAvatar').innerHTML = avatarHTML;
+                document.getElementById('nicknameInput').value = this.data.nickname;
+                
+                // 온라인 대전 닉네임 필드 자동 채우기
+                const nameInput = document.getElementById('playerNameInput');
+                if (nameInput) nameInput.value = this.data.nickname;
+            }
+        };
+
+        function openProfileModal() {
+            SoundEffect.playClick();
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            SoundEffect.playClick();
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 파일 크기 제한 (약 500KB)
+            if (file.size > 512000) {
+                alert("이미지 크기가 너무 큽니다. (500KB 이하 권장)");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result;
+                document.getElementById('editAvatar').innerHTML = `<img src="${base64}">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveProfile() {
+            const nick = document.getElementById('nicknameInput').value.trim();
+            if (!nick) { alert("별명을 입력해주세요!"); return; }
+            
+            const avatarImg = document.querySelector('#editAvatar img');
+            const avatarBase64 = avatarImg ? avatarImg.src : null;
+            
+            ProfileManager.save(nick, avatarBase64);
+            closeProfileModal();
+            showToast("프로필 저장", "성공적으로 저장되었습니다.");
+        }
+
         function initSetup() { 
+            ProfileManager.load(); // 프로필 로드
             addTeamData(0); 
             addTeamData(1); 
             renderTeamSetup(); 
@@ -698,7 +861,9 @@
             const teamList = document.getElementById('teamList');
             teamList.innerHTML = "";
             teams.forEach((t, i) => { 
+                const avatarHTML = t.avatar ? `<img src="${t.avatar}" style="width:20px; height:20px; border-radius:50%; margin-right:6px; object-fit:cover;">` : `<span style="margin-right:6px;">👤</span>`;
                 teamList.innerHTML += `<li style="padding:6px 12px; color:${t.color}; font-weight:800; display:flex; align-items:center; background:white; border-radius:12px; border:1px solid ${t.color}22; box-shadow:0 2px 4px rgba(0,0,0,0.03); font-size:0.85rem;">
+                    ${avatarHTML}
                     <span>${t.name}</span>
                     ${i > 1 ? `<button onclick="removeTeam(${i})" style="margin-left:6px; cursor:pointer; background:none; color:#ff3b30; border:none; padding:0; font-weight:900; font-size:1.1rem; line-height:1;">×</button>` : ''}
                 </li>`; 
@@ -864,18 +1029,18 @@
                     }
                     const teamIdx = teams.length;
                     const color = TEAM_COLORS[teamIdx % 4];
-                    // 접속한 클라이언트의 peerId 저장
-                    teams.push({ id: teamIdx, name: data.playerName, color: color.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: c.peer });
+                    // 접속한 클라이언트의 peerId와 avatar 저장
+                    teams.push({ id: teamIdx, name: data.playerName, color: color.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: c.peer, avatar: data.avatar });
                     
                     c.send({
                         type: 'playerList',
-                        teams: teams.map(t => ({ name: t.name, color: t.color })),
+                        teams: teams.map(t => ({ name: t.name, color: t.color, avatar: t.avatar })),
                         myTeamIdx: teamIdx
                     });
 
                     broadcast({
                         type: 'playerList',
-                        teams: teams.map(t => ({ name: t.name, color: t.color }))
+                        teams: teams.map(t => ({ name: t.name, color: t.color, avatar: t.avatar }))
                     });
                     
                     renderTeamSetup();
@@ -924,7 +1089,7 @@
 
         function createOnlineRoom() {
             if (isConnecting) return;
-            onlinePlayerName = document.getElementById('playerNameInput').value || "방장";
+            onlinePlayerName = ProfileManager.data.nickname;
             isHost = true;
             
             // 6자리 짧은 코드 생성
@@ -943,8 +1108,8 @@
 
                 onlineRoomId = peer.id; 
                 myTeamIdx = 0;
-                // peerId를 팀 정보에 추가 (방장 자신)
-                teams = [{ id: 0, name: onlinePlayerName, color: TEAM_COLORS[0].code, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: peer.id }];
+                // peerId와 avatar를 팀 정보에 추가 (방장 자신)
+                teams = [{ id: 0, name: onlinePlayerName, color: TEAM_COLORS[0].code, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: peer.id, avatar: ProfileManager.data.avatar }];
                 renderTeamSetup();
 
                 const display = document.getElementById('roomInfoDisplay');
@@ -993,7 +1158,7 @@
 
         function joinOnlineRoom(code) {
             if (isConnecting) return;
-            onlinePlayerName = document.getElementById('playerNameInput').value || "참가자";
+            onlinePlayerName = ProfileManager.data.nickname;
             isHost = false;
             onlineRoomId = code;
 
@@ -1004,7 +1169,7 @@
                 newConn.on('open', () => {
                     conn = newConn; 
                     showToast("연결 성공", "데이터 동기화 중...");
-                    newConn.send({ type: 'join', playerName: onlinePlayerName });
+                    newConn.send({ type: 'join', playerName: onlinePlayerName, avatar: ProfileManager.data.avatar });
                 });
 
                 newConn.on('data', (data) => {
@@ -1014,9 +1179,9 @@
                         data.teams.forEach((t, i) => {
                             const existingTeam = teams.find(et => et.name === t.name);
                             if (existingTeam) {
-                                newTeams.push({ ...existingTeam, id: i, color: t.color });
+                                newTeams.push({ ...existingTeam, id: i, color: t.color, avatar: t.avatar });
                             } else {
-                                newTeams.push({ id: i, name: t.name, color: t.color, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: (t.name === onlinePlayerName ? peer.id : null) });
+                                newTeams.push({ id: i, name: t.name, color: t.color, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: (t.name === onlinePlayerName ? peer.id : null), avatar: t.avatar });
                             }
                         });
                         teams = newTeams;
@@ -1177,7 +1342,7 @@
                 // 남은 인원들에게 갱신된 플레이어 리스트 전파
                 broadcast({
                     type: 'playerList',
-                    teams: teams.map(t => ({ name: t.name, color: t.color })),
+                    teams: teams.map(t => ({ name: t.name, color: t.color, avatar: t.avatar })),
                     restart: true
                 });
 
@@ -1185,7 +1350,7 @@
                     maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
                     tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
                     isPowerUpMode: document.getElementById('powerUpMode').checked,
-                    teams: teams.map(t => ({ name: t.name, color: t.color })),
+                    teams: teams.map(t => ({ name: t.name, color: t.color, avatar: t.avatar })),
                     traps: [] 
                 };
                 
@@ -1246,7 +1411,7 @@
                     maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
                     tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
                     isPowerUpMode: document.getElementById('powerUpMode').checked,
-                    teams: teams.map(t => ({ name: t.name, color: t.color })), // 팀 정보 포함
+                    teams: teams.map(t => ({ name: t.name, color: t.color, avatar: t.avatar })), // 팀 정보 포함
                     traps: [] 
                 };
                 
@@ -1284,6 +1449,7 @@
                     }
                     teams[i].name = t.name;
                     teams[i].color = t.color;
+                    teams[i].avatar = t.avatar;
                 });
             } else {
                 if (gameMode === 'ai') {
