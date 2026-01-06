@@ -647,9 +647,13 @@
             
             socket.on('roomCreated', (data) => {
                 onlineRoomId = data.roomId;
-                myTeamIdx = 0; // 방장이 첫 번째 팀
-                document.getElementById('roomInfoDisplay').style.display = 'block';
-                document.getElementById('roomInfoDisplay').innerText = `방 코드: ${onlineRoomId} (대기 중...)`;
+                myTeamIdx = 0; 
+                const display = document.getElementById('roomInfoDisplay');
+                display.style.display = 'block';
+                display.innerHTML = `
+                    방 코드: <span style="background:var(--accent-color); color:white; padding:2px 6px; border-radius:6px;">${onlineRoomId}</span>
+                    <button onclick="copyInviteLink()" style="margin-left:10px; background:none; border:none; color:var(--accent-color); font-weight:800; cursor:pointer; text-decoration:underline; font-size:0.75rem;">🔗 링크 복사</button>
+                `;
                 showToast("방 생성 완료", `코드: ${onlineRoomId}`);
             });
 
@@ -682,6 +686,34 @@
             const name = document.getElementById('playerNameInput').value || "플레이어1";
             socket.emit('createRoom', { playerName: name });
         }
+
+        function copyInviteLink() {
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${onlineRoomId}`;
+            navigator.clipboard.writeText(inviteUrl).then(() => {
+                showToast("초대 링크 복사됨", "카톡 등으로 친구에게 전달하세요!");
+            }).catch(() => {
+                alert(`링크를 복사해주세요: ${inviteUrl}`);
+            });
+        }
+
+        function checkUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const roomCode = params.get('room');
+            if (roomCode) {
+                // 온라인 모드로 자동 전환
+                document.getElementById('modeSelect').value = 'online';
+                document.getElementById('modeSelect').dispatchEvent(new Event('change'));
+                
+                // 잠시 후 자동 참가 (소켓 연결 대기)
+                setTimeout(() => {
+                    const name = document.getElementById('playerNameInput').value || "참가자";
+                    socket.emit('joinRoom', { roomId: roomCode.toUpperCase(), playerName: name });
+                    onlineRoomId = roomCode.toUpperCase();
+                    showToast("자동 참가 시도", `${roomCode}번 방으로 입장합니다.`);
+                }, 800);
+            }
+        }
+        window.addEventListener('load', checkUrlParams);
 
         function showJoinRoomPrompt() {
             const code = prompt("방 코드를 입력하세요:");
