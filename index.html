@@ -11,6 +11,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <title>파워 게이지 윷놀이</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary-color: #3a2d28;
@@ -432,7 +433,18 @@
             <select id="modeSelect" style="font-size: 0.85rem;">
                 <option value="multi">멀티플레이 (다수 팀)</option>
                 <option value="ai">AI와 플레이 (혼자용)</option>
+                <option value="online">온라인 대전 (베타)</option>
             </select>
+        </div>
+
+        <div id="onlineArea" class="input-group" style="display: none; padding: 12px; background: rgba(0,113,227,0.05); border: 1px solid rgba(0,113,227,0.2);">
+            <label style="font-size: 0.8rem; color: var(--accent-color);">🌐 온라인 대전 설정</label>
+            <input type="text" id="playerNameInput" placeholder="닉네임 입력" style="margin-bottom: 8px;">
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="createOnlineRoom()">방 만들기</button>
+                <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="showJoinRoomPrompt()">방 참가</button>
+            </div>
+            <div id="roomInfoDisplay" style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--accent-color); display: none;"></div>
         </div>
 
         <div style="margin-bottom: 15px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
@@ -581,6 +593,12 @@
         let aiTimeoutId = null;
         const aiActionDelay = 2500;
 
+        // 온라인 대전 관련 변수
+        let socket = null;
+        let isOnlineMode = false;
+        let onlineRoomId = null;
+        let myTeamIdx = null; // 온라인 대전 시 내 팀 번호
+
         function initSetup() { addTeamData(0); addTeamData(1); renderTeamSetup(); }
         function renderTeamSetup() {
             const teamList = document.getElementById('teamList');
@@ -604,17 +622,91 @@
         const modeSelect = document.getElementById('modeSelect');
         modeSelect.addEventListener('change', () => {
             gameMode = modeSelect.value;
-            document.getElementById('btnAddTeam').disabled = (gameMode === 'ai');
+            document.getElementById('btnAddTeam').disabled = (gameMode === 'ai' || gameMode === 'online');
             const display = document.getElementById('aiDifficultyDisplay');
+            const onlineArea = document.getElementById('onlineArea');
             
             if (gameMode === 'ai') {
                 display.style.display = 'inline-block';
+                onlineArea.style.display = 'none';
                 showAiDifficultyModal();
                 if (teams.length > 2) { teams = teams.slice(0, 2); renderTeamSetup(); }
+            } else if (gameMode === 'online') {
+                display.style.display = 'none';
+                onlineArea.style.display = 'block';
+                initSocket();
             } else {
                 display.style.display = 'none';
+                onlineArea.style.display = 'none';
             }
         });
+
+        function initSocket() {
+            if (socket) return;
+            socket = io();
+            
+            socket.on('roomCreated', (data) => {
+                onlineRoomId = data.roomId;
+                myTeamIdx = 0; // 방장이 첫 번째 팀
+                document.getElementById('roomInfoDisplay').style.display = 'block';
+                document.getElementById('roomInfoDisplay').innerText = `방 코드: ${onlineRoomId} (대기 중...)`;
+                showToast("방 생성 완료", `코드: ${onlineRoomId}`);
+            });
+
+            socket.on('playerJoined', (data) => {
+                teams = [];
+                data.players.forEach((p, i) => {
+                    const c = TEAM_COLORS[i % 4];
+                    teams.push({ id: i, name: p.name, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
+                    if (p.id === socket.id) myTeamIdx = i;
+                });
+                renderTeamSetup();
+                showToast("새 플레이어 입장", `${data.newPlayer}님이 입장했습니다.`);
+            });
+
+            socket.on('gameStarted', (initialState) => {
+                // 서버에서 받은 초기 상태로 게임 시작 (로직 추후 정교화)
+                startGameOnline();
+            });
+
+            socket.on('remoteAction', (action) => {
+                handleRemoteAction(action);
+            });
+
+            socket.on('errorMsg', (msg) => {
+                alert(msg);
+            });
+        }
+
+        function createOnlineRoom() {
+            const name = document.getElementById('playerNameInput').value || "플레이어1";
+            socket.emit('createRoom', { playerName: name });
+        }
+
+        function showJoinRoomPrompt() {
+            const code = prompt("방 코드를 입력하세요:");
+            if (!code) return;
+            const name = document.getElementById('playerNameInput').value || "플레이어2";
+            socket.emit('joinRoom', { roomId: code.toUpperCase(), playerName: name });
+            onlineRoomId = code.toUpperCase();
+        }
+
+        function startGameOnline() {
+            isOnlineMode = true;
+            initGame();
+        }
+
+        function handleRemoteAction(action) {
+            console.log("Remote action received:", action);
+            if (action.type === 'throw') {
+                processYutResult(action.results, action.flatCount);
+            } else if (action.type === 'move') {
+                executeMove(action.tIdx, action.mId);
+            } else if (action.type === 'skill') {
+                // 원격 유저가 스킬을 사용한 경우 직접 실행
+                useSkill(action.skillType, action.tokenIdx);
+            }
+        }
 
         function showAiDifficultyModal() {
             SoundEffect.playClick();
@@ -634,6 +726,18 @@
         }
 
         function initGame() {
+            if (gameMode === 'online' && myTeamIdx === 0 && !isOnlineMode) {
+                // 방장(0번팀)이 게임 시작을 누르면 방 전체에 시작 알림
+                const initialState = {
+                    maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
+                    tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
+                    isPowerUpMode: document.getElementById('powerUpMode').checked,
+                    traps: [] // 서버에서 생성할 수도 있으나 현재는 클라이언트 공유
+                };
+                socket.emit('startGame', { roomId: onlineRoomId, initialState });
+                return;
+            }
+
             SoundEffect.init(); SoundEffect.playClick();
             const maxVal = parseInt(document.getElementById('undoCountInput').value) || 2;
             tokensPerTeam = parseInt(document.getElementById('tokenCountInput').value) || 2;
@@ -644,36 +748,36 @@
                 if (teams.length > 2) teams = teams.slice(0, 2);
                 const aiNames = { 'easy': '꼬마 도야', 'normal': '영리한 돗개', 'hard': '전설의 윷신' };
                 teams[0].isAi = false; teams[1].isAi = true; teams[1].name = aiNames[aiDifficulty] || 'AI';
-            } else { teams.forEach((t, i) => { t.isAi = false; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); }
+            } else if (gameMode === 'multi') { 
+                teams.forEach((t, i) => { t.isAi = false; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); 
+            }
+            // 온라인 모드일 때는 이미 playerJoined에서 teams 이름 등이 설정됨
+            
             teams.forEach(t => { t.remainingUndos = maxVal; t.sp = 3; t.tokens = []; for(let i=0; i<tokensPerTeam; i++) t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, shielded: false }); });
             document.getElementById('setupArea').style.display = 'none'; document.getElementById('gameWrapper').style.display = 'flex';
             if (isPowerUpMode) { document.getElementById('skillArea').style.display = 'flex'; document.getElementById('spDisplay').style.display = 'inline'; }
             gameState.step = 'THROW'; gameState.currentTeamIdx = 0; gameState.moveQueue = [];
             
-            // --- 고정 함정 생성 로직 ---
-            gameState.traps = [];
-            // 1. 지름길 대각선 1 (shortcut_1: 21, 22, 24, 25) 중 1개
-            const shortcut1Candidates = [21, 22, 24, 25];
-            const pos1 = shortcut1Candidates[Math.floor(Math.random() * shortcut1Candidates.length)];
-            gameState.traps.push({ loc: 'shortcut_1', index: pos1 });
-
-            // 2. 지름길 대각선 2 (shortcut_2: 26, 27, 28, 29) 중 1개
-            const shortcut2Candidates = [26, 27, 28, 29];
-            const pos2 = shortcut2Candidates[Math.floor(Math.random() * shortcut2Candidates.length)];
-            gameState.traps.push({ loc: 'shortcut_2', index: pos2 });
-
-            // 3. 홈 근처 외곽 (16~19번) 중 1개 (20번은 홈이므로 제외)
-            const homeNearIndices = [16, 17, 18, 19];
-            const homePos = homeNearIndices[Math.floor(Math.random() * homeNearIndices.length)];
-            gameState.traps.push({ loc: 'outer', index: homePos });
-            // --------------------------
+            // --- 함정 생성 로직 (온라인 시 방장이 생성한 함정 공유 가능) ---
+            if (!isOnlineMode || myTeamIdx === 0) {
+                gameState.traps = [];
+                const shortcut1Candidates = [21, 22, 24, 25];
+                gameState.traps.push({ loc: 'shortcut_1', index: shortcut1Candidates[Math.floor(Math.random() * shortcut1Candidates.length)] });
+                const shortcut2Candidates = [26, 27, 28, 29];
+                gameState.traps.push({ loc: 'shortcut_2', index: shortcut2Candidates[Math.floor(Math.random() * shortcut2Candidates.length)] });
+                const homeNearIndices = [16, 17, 18, 19];
+                gameState.traps.push({ loc: 'outer', index: homeNearIndices[Math.floor(Math.random() * homeNearIndices.length)] });
+            }
 
             GameStats.resetSession(); drawBoardDots(); updateBoardVisuals(); updateTurnUI();
             setTimeout(optimizeLayout, 100);
         }
 
         let isCharging = false, power = 0, direction = 1, animId = null;
-        function toggleThrow() { if (!isCharging) startGauge(); else stopGauge(); }
+        function toggleThrow() { 
+            if (isOnlineMode && gameState.currentTeamIdx !== myTeamIdx) return;
+            if (!isCharging) startGauge(); else stopGauge(); 
+        }
         function startGauge() {
             SoundEffect.playStartGauge(); isCharging = true;
             document.getElementById('actionBtn').innerText = "멈추기 (STOP)"; document.getElementById('actionBtn').style.backgroundColor = "#ff3b30";
@@ -698,6 +802,19 @@
         function calculateYutResult() {
             let flatCount = 0, results = [];
             for(let i=0; i<4; i++) { let isFlat = Math.random() < 0.52; results.push(isFlat); if(isFlat) flatCount++; }
+            
+            // 온라인 모드일 때 결과 전송
+            if (isOnlineMode && gameState.currentTeamIdx === myTeamIdx) {
+                socket.emit('gameAction', { 
+                    roomId: onlineRoomId, 
+                    action: { type: 'throw', results, flatCount } 
+                });
+            }
+
+            processYutResult(results, flatCount);
+        }
+
+        function processYutResult(results, flatCount) {
             updateSticks(results);
             let score = 0, text = "", isBackDo = false;
             switch(flatCount) {
@@ -716,8 +833,11 @@
                 document.getElementById('subResult').innerText = "윷/모! 한 번 더!"; 
                 setTimeout(() => { 
                     if (!teams[gameState.currentTeamIdx].isAi) {
-                        document.getElementById('actionBtn').disabled = false; 
-                        document.getElementById('actionBtn').innerText = "던지기 (한번 더!)"; 
+                        // 온라인 모드에서도 내 차례일 때만 버튼 활성화
+                        if (!isOnlineMode || gameState.currentTeamIdx === myTeamIdx) {
+                            document.getElementById('actionBtn').disabled = false; 
+                            document.getElementById('actionBtn').innerText = "던지기 (한번 더!)"; 
+                        }
                     }
                     updateAvailableMovesUI(); 
                     maybeTriggerAi(); 
@@ -752,6 +872,14 @@
         }
 
         async function executeMove(tIdx, mId) {
+            // 온라인 모드 동기화
+            if (isOnlineMode && gameState.currentTeamIdx === myTeamIdx) {
+                socket.emit('gameAction', { 
+                    roomId: onlineRoomId, 
+                    action: { type: 'move', tIdx, mId } 
+                });
+            }
+
             historyState = { gameSnapshot: JSON.parse(JSON.stringify({ teams, gameState })), whoMovedIdx: gameState.currentTeamIdx };
             const mIdx = gameState.moveQueue.findIndex(m => m.id === mId); const score = gameState.moveQueue[mIdx].score;
             gameState.moveQueue.splice(mIdx, 1); gameState.selectedMoveId = null;
@@ -836,11 +964,22 @@
         async function useSkill(type, tokenIdx = -1) {
             const team = teams[gameState.currentTeamIdx]; if (!isPowerUpMode) return;
             
+            // 온라인 모드 차례 확인
+            if (isOnlineMode && gameState.currentTeamIdx !== myTeamIdx) return;
+
             // 사람 플레이어이고 말을 선택하지 않은 경우 선택창 표시
             if (!team.isAi && (type === 'shield' || type === 'boost') && tokenIdx === -1) {
                 gameState.selectedSkillType = type;
                 renderSkillTokenOptions(type);
                 return;
+            }
+
+            // 온라인 모드 동기화
+            if (isOnlineMode && gameState.currentTeamIdx === myTeamIdx) {
+                socket.emit('gameAction', { 
+                    roomId: onlineRoomId, 
+                    action: { type: 'skill', skillType: type, tokenIdx } 
+                });
             }
 
             if (type === 'shield') {
