@@ -967,10 +967,16 @@
             console.log("Remote action received:", action);
             if (action.type === 'throw') {
                 processYutResult(action.results, action.flatCount, action.moveId);
+            } else if (action.type === 'fail') {
+                // 상대방의 낙장/힘부족 처리
+                SoundEffect.playFail(); 
+                showToast(action.title, action.desc);
+                document.getElementById('subResult').innerText = action.desc; 
+                setTimeout(nextTurn, 1500); 
             } else if (action.type === 'move') {
                 executeMove(action.tIdx, action.mId);
             } else if (action.type === 'skill') {
-                useSkill(action.skillType, action.tokenIdx);
+                useSkill(action.skillType, action.tokenIdx, true);
             }
         }
 
@@ -1102,6 +1108,12 @@
         function stopGauge() { isCharging = false; cancelAnimationFrame(animId); document.getElementById('actionBtn').disabled = true; handleThrowResult(power); }
         function handleThrowResult(p) { if (p <= 10) handleFail("❌ 힘 부족", "너무 약했습니다."); else if (p >= 90) handleFail("⚠️ 낙장!", "너무 강했습니다."); else calculateYutResult(); }
         function handleFail(t, d) { 
+            // 온라인 모드일 때 실패 정보 전송
+            if (isOnlineMode && gameState.currentTeamIdx === myTeamIdx) {
+                const data = { type: 'action', action: { type: 'fail', title: t, desc: d } };
+                if (isHost) broadcast(data); else sendToHost(data);
+            }
+
             SoundEffect.playFail(); 
             showToast(t, d);
             document.getElementById('subResult').innerText = d; 
@@ -1270,21 +1282,21 @@
             });
         }
 
-        async function useSkill(type, tokenIdx = -1) {
+        async function useSkill(type, tokenIdx = -1, isRemote = false) {
             const team = teams[gameState.currentTeamIdx]; if (!isPowerUpMode) return;
             
-            // 온라인 모드 차례 확인
-            if (isOnlineMode && gameState.currentTeamIdx !== myTeamIdx) return;
+            // 온라인 모드 차례 확인 (원격 요청이 아닐 때만)
+            if (isOnlineMode && !isRemote && gameState.currentTeamIdx !== myTeamIdx) return;
 
-            // 사람 플레이어이고 말을 선택하지 않은 경우 선택창 표시
-            if (!team.isAi && (type === 'shield' || type === 'boost') && tokenIdx === -1) {
+            // 사람 플레이어이고 말을 선택하지 않은 경우 선택창 표시 (원격 아닐 때만)
+            if (!isRemote && !team.isAi && (type === 'shield' || type === 'boost') && tokenIdx === -1) {
                 gameState.selectedSkillType = type;
                 renderSkillTokenOptions(type);
                 return;
             }
 
-            // 온라인 모드 동기화
-            if (isOnlineMode && gameState.currentTeamIdx === myTeamIdx) {
+            // 온라인 모드 동기화 (내가 직접 사용할 때만)
+            if (isOnlineMode && !isRemote && gameState.currentTeamIdx === myTeamIdx) {
                 const data = { type: 'action', action: { type: 'skill', skillType: type, tokenIdx } };
                 if (isHost) broadcast(data); else sendToHost(data);
             }
@@ -1547,6 +1559,10 @@
             gameState.currentTeamIdx = (gameState.currentTeamIdx + 1) % teams.length; 
             gameState.step = 'THROW'; gameState.moveQueue = []; gameState.selectedMoveId = null; 
             
+            // 게이지 및 UI 초기화
+            isCharging = false;
+            power = 0;
+            document.getElementById('powerBar').style.width = "0%";
             document.getElementById('availableMoves').innerHTML = ""; 
             document.getElementById('subResult').innerText = "버튼을 눌러 힘을 조절하세요!"; 
             for(let i=0; i<4; i++) { sticks[i].className = 'stick round'; if(i===3) sticks[i].classList.add('back-do-mark'); }
