@@ -729,6 +729,106 @@
             });
         }
 
+        let isConnecting = false;
+
+        function initP2P(customId, callback) {
+            if (isConnecting && !customId) return; 
+            isConnecting = true;
+
+            if (peer && !peer.destroyed) {
+                if (peer.open) {
+                    isConnecting = false;
+                    if (callback) callback();
+                } else {
+                    peer.once('open', () => {
+                        isConnecting = false;
+                        if (callback) callback();
+                    });
+                }
+                return;
+            }
+            
+            peer = customId ? new Peer(customId) : new Peer();
+            
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                isConnecting = false;
+                if (callback) callback();
+            });
+
+            peer.on('error', (err) => {
+                isConnecting = false;
+                console.error('PeerJS Error:', err);
+                if (err.type === 'peer-disconnected') showToast("연결 끊김", "네트워크를 확인하세요.");
+                else if (err.type === 'unavailable-id') {
+                    if (isHost) createOnlineRoom();
+                    else showToast("오류", "이미 사용 중인 방 코드입니다.");
+                }
+                else if (err.type === 'peer-not-found') showToast("오류", "방을 찾을 수 없습니다.");
+                else showToast("연결 실패", "잠시 후 다시 시도해주세요.");
+            });
+
+            peer.on('connection', (newConn) => {
+                if (!isHost) {
+                    newConn.close();
+                    return;
+                }
+                setupConnection(newConn);
+            });
+        }
+
+        function setupConnection(c) {
+            const onOpen = () => {
+                if (!connections.find(item => item.peer === c.peer)) {
+                    connections.push(c);
+                }
+                console.log("Connected to guest: " + c.peer);
+            };
+
+            if (c.open) onOpen();
+            else c.on('open', onOpen);
+
+            c.on('data', (data) => {
+                if (data.type === 'join') {
+                    if (teams.length >= 4) {
+                        c.send({ type: 'error', msg: '방이 가득 찼습니다.' });
+                        return;
+                    }
+                    const teamIdx = teams.length;
+                    const color = TEAM_COLORS[teamIdx % 4];
+                    teams.push({ id: teamIdx, name: data.playerName, color: color.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
+                    
+                    c.send({
+                        type: 'playerList',
+                        teams: teams.map(t => ({ name: t.name, color: t.color })),
+                        myTeamIdx: teamIdx
+                    });
+
+                    broadcast({
+                        type: 'playerList',
+                        teams: teams.map(t => ({ name: t.name, color: t.color }))
+                    });
+                    
+                    renderTeamSetup();
+                    showToast("플레이어 입장", `${data.playerName}님 환영합니다!`);
+                } else if (data.type === 'action') {
+                    handleRemoteAction(data.action);
+                    if (isHost) {
+                        connections.forEach(connItem => {
+                            if (connItem.peer !== c.peer && connItem.open) {
+                                connItem.send({ type: 'action', action: data.action });
+                            }
+                        });
+                    }
+                }
+            });
+
+            c.on('close', () => {
+                connections = connections.filter(item => item.peer !== c.peer);
+                showToast("연결 종료", "플레이어 한 명이 나갔습니다.");
+            });
+        }
+
         function generateRoomId() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let result = '';
@@ -737,16 +837,16 @@
         }
 
         function createOnlineRoom() {
-            onlinePlayerName = document.getElementById('playerNameInput').value || "플레이어1";
+            if (isConnecting) return;
+            onlinePlayerName = document.getElementById('playerNameInput').value || "방장";
             isHost = true;
             const newId = generateRoomId();
             
+            showToast("방 생성 중...", "잠시만 기다려주세요.");
             initP2P(newId, () => {
                 onlineRoomId = peer.id;
                 myTeamIdx = 0;
-                
-                const c = TEAM_COLORS[0];
-                teams = [{ id: 0, name: onlinePlayerName, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }];
+                teams = [{ id: 0, name: onlinePlayerName, color: TEAM_COLORS[0].code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }];
                 renderTeamSetup();
 
                 const display = document.getElementById('roomInfoDisplay');
@@ -755,32 +855,24 @@
                     <div style="display:flex; flex-direction:column; gap:10px; align-items:center; padding:5px 0;">
                         <div style="font-size:1.1rem;">방 코드: <strong id="currentRoomCode" style="color:var(--accent-color); background:#0071e311; padding:2px 10px; border-radius:8px; border:1px solid var(--accent-color); letter-spacing:2px;">${onlineRoomId}</strong></div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width:100%;">
-                            <button onclick="copyRoomCode()" style="background:#3a2d28; color:white; border:none; padding:10px; border-radius:10px; font-size:0.8rem; font-weight:700; cursor:pointer;">🔢 코드 복사</button>
-                            <button onclick="copyInviteLink()" style="background:var(--accent-color); color:white; border:none; padding:10px; border-radius:10px; font-size:0.8rem; font-weight:700; cursor:pointer;">🔗 링크 복사</button>
+                            <button onclick="copyRoomCode()" style="background:#3a2d28; color:white; border:none; padding:10px; border-radius:10px; font-size:0.8rem; font-weight:700;">🔢 코드 복사</button>
+                            <button onclick="copyInviteLink()" style="background:var(--accent-color); color:white; border:none; padding:10px; border-radius:10px; font-size:0.8rem; font-weight:700;">🔗 링크 복사</button>
                         </div>
                     </div>
                 `;
-                showToast("방 생성 완료", "코드를 친구에게 공유하세요!");
+                showToast("방 생성 완료", "친구를 초대하세요!");
             });
         }
 
         function copyRoomCode() {
             if (!onlineRoomId) return;
-            navigator.clipboard.writeText(onlineRoomId).then(() => {
-                showToast("방 코드 복사됨", onlineRoomId);
-            }).catch(() => {
-                alert(`방 코드: ${onlineRoomId}`);
-            });
+            navigator.clipboard.writeText(onlineRoomId).then(() => showToast("복사 완료", onlineRoomId));
         }
 
         function copyInviteLink() {
             if (!onlineRoomId) return;
-            const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${onlineRoomId}`;
-            navigator.clipboard.writeText(inviteUrl).then(() => {
-                showToast("초대 링크 복사됨", "카톡 등으로 전달하세요!");
-            }).catch(() => {
-                alert(`링크 직접 복사: ${inviteUrl}`);
-            });
+            const url = `${window.location.origin}${window.location.pathname}?room=${onlineRoomId}`;
+            navigator.clipboard.writeText(url).then(() => showToast("링크 복사 완료", "카톡에 전달하세요!"));
         }
 
         function checkUrlParams() {
@@ -789,43 +881,45 @@
             if (roomCode) {
                 document.getElementById('modeSelect').value = 'online';
                 document.getElementById('modeSelect').dispatchEvent(new Event('change'));
-                setTimeout(() => {
-                    joinOnlineRoom(roomCode.trim().toUpperCase());
-                }, 800);
+                setTimeout(() => joinOnlineRoom(roomCode.trim().toUpperCase()), 1200);
             }
         }
         window.addEventListener('load', checkUrlParams);
 
         function showJoinRoomPrompt() {
+            if (isConnecting) return;
             const code = prompt("방 코드를 입력하세요 (6자리):");
             if (code) joinOnlineRoom(code.trim().toUpperCase());
         }
 
         function joinOnlineRoom(code) {
+            if (isConnecting) return;
             onlinePlayerName = document.getElementById('playerNameInput').value || "참가자";
             isHost = false;
-            onlineRoomId = code.toUpperCase();
+            onlineRoomId = code;
 
             initP2P(null, () => {
-                showToast("연결 시도", `${onlineRoomId}번 방에 접속 중...`);
-                conn = peer.connect(onlineRoomId);
+                showToast("방 찾는 중...", onlineRoomId);
+                const newConn = peer.connect(onlineRoomId);
                 
-                conn.on('open', () => {
-                    showToast("연결 성공", "방에 입장합니다...");
-                    conn.send({ type: 'join', playerName: onlinePlayerName });
+                newConn.on('open', () => {
+                    conn = newConn; 
+                    showToast("연결 성공", "데이터 동기화 중...");
+                    newConn.send({ type: 'join', playerName: onlinePlayerName });
                 });
 
-                conn.on('data', (data) => {
+                newConn.on('data', (data) => {
                     if (data.type === 'playerList') {
                         teams = [];
                         data.teams.forEach((t, i) => {
                             teams.push({ id: i, name: t.name, color: t.color, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
-                            if (t.name === onlinePlayerName) myTeamIdx = i;
                         });
-                        if (myTeamIdx === null) myTeamIdx = teams.length - 1;
+                        if (data.myTeamIdx !== undefined) myTeamIdx = data.myTeamIdx;
                         renderTeamSetup();
+                        showToast("입장 완료", "모든 플레이어가 들어오면 시작!");
                     } else if (data.type === 'error') {
                         alert(data.msg);
+                        location.reload();
                     } else if (data.type === 'gameStarted') {
                         startGameOnline();
                     } else if (data.type === 'action') {
@@ -833,44 +927,23 @@
                     }
                 });
 
-                conn.on('close', () => {
+                newConn.on('close', () => {
                     alert("방장과 연결이 끊겼습니다.");
                     location.reload();
                 });
             });
         }
-                conn.on('open', () => {
-                    showToast("연결 성공", "방에 입장합니다...");
-                    conn.send({ type: 'join', playerName: onlinePlayerName });
-                });
 
-                conn.on('data', (data) => {
-                    if (data.type === 'playerList') {
-                        teams = [];
-                        data.teams.forEach((t, i) => {
-                            teams.push({ id: i, name: t.name, color: t.color, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
-                            // PeerJS ID로 본인 확인이 어렵다면, 이름이나 순서로 매칭 (여기서는 순서로 처리)
-                            if (t.name === onlinePlayerName && myTeamIdx === null) {
-                                myTeamIdx = i;
-                            }
-                        });
-                        // 만약 이름이 겹쳐서 myTeamIdx를 못찾았다면 마지막 참가자로 설정
-                        if (myTeamIdx === null) myTeamIdx = teams.length - 1;
-                        
-                        renderTeamSetup();
-                        if (data.newPlayer) showToast("새 플레이어", `${data.newPlayer}님이 입장했습니다.`);
-                    } else if (data.type === 'gameStarted') {
-                        startGameOnline();
-                    } else if (data.type === 'action') {
-                        handleRemoteAction(data.action);
-                    }
-                });
-
-                conn.on('close', () => {
-                    alert("호스트와의 연결이 끊겼습니다.");
-                    location.reload();
-                });
+        function broadcast(data) {
+            connections.forEach(c => {
+                if (c && c.open) c.send(data);
             });
+        }
+
+        function sendToHost(data) {
+            if (conn && conn.open) {
+                conn.send(data);
+            }
         }
 
         function startGameOnline() {
