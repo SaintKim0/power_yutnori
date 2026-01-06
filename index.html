@@ -750,12 +750,14 @@
                 teams = [{ id: 0, name: onlinePlayerName, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }];
                 renderTeamSetup();
 
+                const display = document.getElementById('roomInfoDisplay');
+                display.style.display = 'block';
                 display.innerHTML = `
-                    <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
-                        <div>방 코드: <span id="currentRoomCode" style="background:var(--accent-color); color:white; padding:2px 8px; border-radius:8px; font-weight:700;">${onlineRoomId}</span></div>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="copyRoomCode()" style="background:var(--primary-color); color:white; border:none; padding:4px 10px; border-radius:12px; font-size:0.75rem; cursor:pointer;">🔢 코드만 복사</button>
-                            <button onclick="copyInviteLink()" style="background:var(--accent-color); color:white; border:none; padding:4px 10px; border-radius:12px; font-size:0.75rem; cursor:pointer;">🔗 초대 링크 복사</button>
+                    <div style="display:flex; flex-direction:column; gap:10px; align-items:center; padding:5px 0;">
+                        <div style="font-size:1.1rem;">방 코드: <strong id="currentRoomCode" style="color:var(--accent-color); background:#0071e311; padding:2px 10px; border-radius:8px; border:1px solid var(--accent-color);">${onlineRoomId}</strong></div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width:100%;">
+                            <button onclick="copyRoomCode()" style="background:#3a2d28; color:white; border:none; padding:10px; border-radius:10px; font-size:0.8rem; font-weight:700; cursor:pointer;">🔢 코드 복사</button>
+                            <button onclick="copyInviteLink()" style="background:var(--accent-color); color:white; border:none; padding:10px; border-radius:10px; font-size:0.8rem; font-weight:700; cursor:pointer;">🔗 링크 복사</button>
                         </div>
                     </div>
                 `;
