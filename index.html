@@ -551,7 +551,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.11 (전역 변수 오류 수정판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.12 (다시하기 동기화 버그 수정판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -1014,12 +1014,20 @@
                         });
                     }
                 } else if (data.type === 'restartRequest') {
+                    // 호스트가 요청을 받으면 요청한 클라이언트를 '수락' 상태로 기록
+                    if (data.peerId) {
+                        restartVotes[data.peerId] = true;
+                    }
                     showRestartConfirm();
                     connections.forEach(connItem => {
                         if (connItem.peer !== c.peer && connItem.open) {
-                            connItem.send({ type: 'restartRequest' });
+                            connItem.send({ type: 'restartRequest', peerId: data.peerId });
                         }
                     });
+                    // 호스트가 이미 수락 상태라면 투표 확인
+                    if (restartVotes[peer.id]) {
+                        handleHostRestartVote(peer.id, true);
+                    }
                 } else if (data.type === 'restartResponse') {
                     handleHostRestartVote(data.peerId, data.accepted);
                     connections.forEach(connItem => {
@@ -1209,10 +1217,10 @@
             // 본인은 수락한 것으로 처리
             restartVotes[peer.id] = true;
             
-            const data = { type: 'restartRequest' };
+            // 요청 시 본인의 peerId를 함께 전송
+            const data = { type: 'restartRequest', peerId: peer.id };
             if (isHost) broadcast(data); else sendToHost(data);
             
-            // 호스트인데 혼자 남은 경우 즉시 재시작 가능하게 처리
             if (isHost && connections.length === 0) {
                 resetGameOnline();
             }
