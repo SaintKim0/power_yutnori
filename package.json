@@ -1,0 +1,24 @@
+{
+  "name": "power_yutnori",
+  "version": "1.0.0",
+  "description": "🥏 파워 윷놀이 (Power Yutnori)",
+  "main": "convert-svg-to-png.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SaintKim0/power_yutnori.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SaintKim0/power_yutnori/issues"
+  },
+  "homepage": "https://github.com/SaintKim0/power_yutnori#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
