@@ -467,7 +467,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.0 (P2P 6자리 코드 강화판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.1 (낙장 동기화 수정판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -972,7 +972,10 @@
                 SoundEffect.playFail(); 
                 showToast(action.title, action.desc);
                 document.getElementById('subResult').innerText = action.desc; 
-                setTimeout(nextTurn, 1500); 
+                setTimeout(() => {
+                    const nextIdx = (action.turnIdx + 1) % teams.length;
+                    nextTurn(nextIdx);
+                }, 1500); 
             } else if (action.type === 'move') {
                 executeMove(action.tIdx, action.mId);
             } else if (action.type === 'skill') {
@@ -1108,16 +1111,20 @@
         function stopGauge() { isCharging = false; cancelAnimationFrame(animId); document.getElementById('actionBtn').disabled = true; handleThrowResult(power); }
         function handleThrowResult(p) { if (p <= 10) handleFail("❌ 힘 부족", "너무 약했습니다."); else if (p >= 90) handleFail("⚠️ 낙장!", "너무 강했습니다."); else calculateYutResult(); }
         function handleFail(t, d) { 
-            // 온라인 모드일 때 실패 정보 전송
+            // 온라인 모드일 때 실패 정보 전송 (현재 턴 번호 포함)
             if (isOnlineMode && gameState.currentTeamIdx === myTeamIdx) {
-                const data = { type: 'action', action: { type: 'fail', title: t, desc: d } };
+                const data = { type: 'action', action: { type: 'fail', title: t, desc: d, turnIdx: gameState.currentTeamIdx } };
                 if (isHost) broadcast(data); else sendToHost(data);
             }
-
+            
             SoundEffect.playFail(); 
             showToast(t, d);
             document.getElementById('subResult').innerText = d; 
-            setTimeout(nextTurn, 1500); 
+            setTimeout(() => {
+                // 다음 턴으로 넘길 때 방장이면 강제로 다음 인덱스를 계산해서 넘김
+                const nextIdx = (gameState.currentTeamIdx + 1) % teams.length;
+                nextTurn(nextIdx);
+            }, 1500); 
         }
 
         function calculateYutResult() {
@@ -1554,12 +1561,17 @@
         function checkWin() { const team = teams[gameState.currentTeamIdx]; if (team.tokens.every(t => t.finished)) { gameState.step = 'END'; SoundEffect.playWin(); document.getElementById('winTitle').innerText = `${team.name} 승리!`; document.getElementById('winTitle').style.color = team.color; GameStats.recordGameEnd(gameMode==='ai'?!team.isAi:true); document.getElementById('winModal').style.display = 'flex'; fireConfetti(); return true; } return false; }
         function fireConfetti() { const canvas = document.getElementById('confettiCanvas'); canvas.style.display = 'block'; const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; const pieces = [], colors = ['#0071e3', '#ff3b30', '#34c759', '#ffcc00', '#af52de', '#ff9500']; for(let i=0; i<150; i++) pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height-canvas.height, color: colors[i%colors.length], size: Math.random()*8+4, speedY: Math.random()*3+2, speedX: Math.random()*2-1, rot: Math.random()*360, rotS: Math.random()*10-5 }); function anim() { if (gameState.step !== 'END') return; ctx.clearRect(0,0,canvas.width,canvas.height); pieces.forEach(p => { p.y += p.speedY; p.x += p.speedX; p.rot += p.rotS; if (p.y > canvas.height) { p.y = -20; p.x = Math.random()*canvas.width; } ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle = p.color; ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size); ctx.restore(); }); requestAnimationFrame(anim); } anim(); }
         function undoLastMove() { if (!historyState) return; SoundEffect.playClick(); const teamIdx = historyState.whoMovedIdx; if (teams[teamIdx].remainingUndos <= 0) return; const snapshot = historyState.gameSnapshot; teams = snapshot.teams; gameState = snapshot.gameState; teams[teamIdx].remainingUndos--; historyState = null; document.getElementById('btnUndo').style.display = 'none'; updateBoardVisuals(); updateTurnUI(); if (gameState.step === 'MOVE') { document.getElementById('gaugeArea').style.display = 'none'; document.getElementById('moveArea').style.display = 'block'; updateAvailableMovesUI(); renderTokenOptions(); } else { document.getElementById('gaugeArea').style.display = 'block'; document.getElementById('moveArea').style.display = 'none'; document.getElementById('actionBtn').disabled = false; document.getElementById('actionBtn').innerText = gameState.moveQueue.length > 0 ? "던지기 (보너스)" : "던지기 (START)"; } }
-        function nextTurn() { 
-            if (aiTimeoutId) { clearTimeout(aiTimeoutId); aiTimeoutId = null; } // 턴이 바뀔 때 대기 중인 모든 AI 동작 취소
-            gameState.currentTeamIdx = (gameState.currentTeamIdx + 1) % teams.length; 
+        function nextTurn(forcedIdx = null) { 
+            if (aiTimeoutId) { clearTimeout(aiTimeoutId); aiTimeoutId = null; } 
+            
+            if (forcedIdx !== null) {
+                gameState.currentTeamIdx = forcedIdx;
+            } else {
+                gameState.currentTeamIdx = (gameState.currentTeamIdx + 1) % teams.length; 
+            }
+            
             gameState.step = 'THROW'; gameState.moveQueue = []; gameState.selectedMoveId = null; 
             
-            // 게이지 및 UI 초기화
             isCharging = false;
             power = 0;
             document.getElementById('powerBar').style.width = "0%";
@@ -1568,6 +1580,29 @@
             for(let i=0; i<4; i++) { sticks[i].className = 'stick round'; if(i===3) sticks[i].classList.add('back-do-mark'); }
             
             updateTurnUI(); 
+
+            // 방장은 턴이 바뀔 때마다 전체 상태를 강제 동기화하여 전파
+            if (isOnlineMode && isHost) {
+                setTimeout(syncGameState, 500);
+            }
+        }
+
+        function syncGameState() {
+            if (!isOnlineMode || !isHost) return;
+            const stateData = {
+                type: 'sync',
+                teams: teams.map(t => ({
+                    id: t.id,
+                    sp: t.sp,
+                    remainingUndos: t.remainingUndos,
+                    tokens: t.tokens.map(tk => ({ ...tk }))
+                })),
+                currentTeamIdx: gameState.currentTeamIdx,
+                step: gameState.step,
+                moveQueue: gameState.moveQueue,
+                traps: gameState.traps
+            };
+            broadcast(stateData);
         }
         function showMessage(msg, color) { 
             showToast(msg, "");
