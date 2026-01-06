@@ -477,9 +477,8 @@
             <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px;">
                 <div id="availableMoves" style="display:flex; gap:4px;"></div>
                 <div class="yut-container" id="yutContainer" style="margin-bottom: 0;"><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div></div>
-                <div class="result-text" id="mainResult" style="margin: 0; height: auto;">준비</div>
             </div>
-            <div class="info-text" id="subResult">버튼을 눌러 힘을 조절하세요!</div>
+            <div class="info-text" id="subResult" style="font-weight: 600; color: #1d1d1f; height: 20px;">버튼을 눌러 힘을 조절하세요!</div>
             <div id="gaugeArea"><div class="gauge-wrapper"><div class="zone zone-weak">약함</div><div class="zone zone-safe">성공</div><div class="zone zone-over">낙장</div><div class="power-bar" id="powerBar"></div></div></div>
             <div id="moveArea" style="display: none;">
                 <div id="moveOptions"></div>
@@ -678,7 +677,7 @@
         function startGauge() {
             SoundEffect.playStartGauge(); isCharging = true;
             document.getElementById('actionBtn').innerText = "멈추기 (STOP)"; document.getElementById('actionBtn').style.backgroundColor = "#ff3b30";
-            document.getElementById('mainResult').innerText = "힘 조절 중..."; loopGauge();
+            document.getElementById('subResult').innerText = "힘 조절 중..."; loopGauge();
         }
         function loopGauge() {
             if (!isCharging) return; power += direction * 2.5;
@@ -689,7 +688,12 @@
         }
         function stopGauge() { isCharging = false; cancelAnimationFrame(animId); document.getElementById('actionBtn').disabled = true; handleThrowResult(power); }
         function handleThrowResult(p) { if (p <= 10) handleFail("❌ 힘 부족", "너무 약했습니다."); else if (p >= 90) handleFail("⚠️ 낙장!", "너무 강했습니다."); else calculateYutResult(); }
-        function handleFail(t, d) { SoundEffect.playFail(); document.getElementById('mainResult').innerText = t; document.getElementById('mainResult').style.color = "#ff3b30"; document.getElementById('subResult').innerText = d; setTimeout(nextTurn, 1500); }
+        function handleFail(t, d) { 
+            SoundEffect.playFail(); 
+            showToast(t, d);
+            document.getElementById('subResult').innerText = d; 
+            setTimeout(nextTurn, 1500); 
+        }
 
         function calculateYutResult() {
             let flatCount = 0, results = [];
@@ -703,8 +707,8 @@
                 case 4: text="윷"; score=4; break;
                 case 0: text="모"; score=5; break;
             }
-            document.getElementById('mainResult').innerText = `${isBackDo ? '🔙' : '🎉'} ${text}!`;
-            document.getElementById('mainResult').style.color = isBackDo ? "#ff3b30" : "#34c759";
+            const resultText = `${isBackDo ? '🔙' : '🎉'} ${text}!`;
+            showToast(resultText, "이동할 말을 선택하세요.");
             gameState.moveQueue.push({ id: Date.now(), score, text });
             if (!teams[gameState.currentTeamIdx].isAi && (score >= 4)) GameStats.currentSession.yutMoCount++;
             if (score >= 4) SoundEffect.playGoodThrow(); else SoundEffect.playYutThrow();
@@ -1098,14 +1102,15 @@
             gameState.step = 'THROW'; gameState.moveQueue = []; gameState.selectedMoveId = null; 
             
             document.getElementById('availableMoves').innerHTML = ""; 
-            document.getElementById('mainResult').innerText = "준비"; 
-            document.getElementById('mainResult').style.color = "inherit"; 
             document.getElementById('subResult').innerText = "버튼을 눌러 힘을 조절하세요!"; 
             for(let i=0; i<4; i++) { sticks[i].className = 'stick round'; if(i===3) sticks[i].classList.add('back-do-mark'); }
             
             updateTurnUI(); 
         }
-        function showMessage(msg, color) { document.getElementById('mainResult').innerText = msg; document.getElementById('mainResult').style.color = color || "inherit"; document.getElementById('subResult').innerText = ""; }
+        function showMessage(msg, color) { 
+            showToast(msg, "");
+            document.getElementById('subResult').innerText = ""; 
+        }
         function updateTurnUI() { 
             const team = teams[gameState.currentTeamIdx]; if (!team) return; 
             document.getElementById('turnIndicator').innerText = `${team.name}${team.isAi ? ' (AI)' : ''} 차례`; 
