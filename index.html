@@ -424,8 +424,16 @@
             <div class="input-group" style="flex: 1; margin: 0; padding: 12px;"><label for="undoCountInput" style="font-size: 0.8rem;">물리기 횟수</label><input type="number" id="undoCountInput" value="2" min="0" max="10" inputmode="numeric"></div>
         </div>
 
-        <div class="input-group" style="padding: 12px;"><label for="modeSelect" style="font-size: 0.85rem;">플레이 모드</label><select id="modeSelect" style="font-size: 0.85rem;"><option value="multi">멀티플레이 (다수 팀)</option><option value="ai">AI와 플레이 (혼자용)</option></select></div>
-        <div id="aiDifficultyArea" class="input-group" style="display: none; padding: 12px;"><label for="aiDifficulty" style="font-size: 0.85rem;">AI 캐릭터 (난이도)</label><select id="aiDifficulty" style="font-size: 0.85rem;"><option value="easy">꼬마 도야 (초보)</option><option value="normal" selected>영리한 돗개 (보통)</option><option value="hard">전설의 윷신 (고수)</option></select></div>
+        <div class="input-group" style="padding: 12px;">
+            <label for="modeSelect" style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                플레이 모드
+                <span id="aiDifficultyDisplay" style="display: none; color: var(--accent-color); font-size: 0.75rem; cursor: pointer; background: rgba(0,113,227,0.1); padding: 2px 8px; border-radius: 8px;" onclick="showAiDifficultyModal()">🤖 보통 ⚙️</span>
+            </label>
+            <select id="modeSelect" style="font-size: 0.85rem;">
+                <option value="multi">멀티플레이 (다수 팀)</option>
+                <option value="ai">AI와 플레이 (혼자용)</option>
+            </select>
+        </div>
 
         <div style="margin-bottom: 15px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -476,6 +484,19 @@
                 <button class="btn-primary" id="actionBtn" onclick="toggleThrow()" style="flex: 0 0 35%; padding: 12px 5px; font-size: 0.85rem;">던지기 (START)</button>
                 <button id="btnUndo" class="btn-undo" onclick="undoLastMove()">↩</button>
             </div>
+        </div>
+    </div>
+
+    <div id="aiDifficultyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">🤖 AI 캐릭터 선택</div>
+            <div class="modal-desc" style="text-align: center; margin-bottom: 20px;">대결할 AI의 난이도를 선택하세요.</div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="btn-primary" onclick="setAiDifficulty('easy')" style="background: #34c759; border-radius: 16px; padding: 15px;">🐷 꼬마 도야 (초보)</button>
+                <button class="btn-primary" onclick="setAiDifficulty('normal')" style="background: #0071e3; border-radius: 16px; padding: 15px;">🐶 영리한 돗개 (보통)</button>
+                <button class="btn-primary" onclick="setAiDifficulty('hard')" style="background: #ff3b30; border-radius: 16px; padding: 15px;">🐉 전설의 윷신 (고수)</button>
+            </div>
+            <button class="btn-secondary" style="width: 100%; margin-top: 20px; background: transparent; color: #86868b;" onclick="closeAiModal()">닫기</button>
         </div>
     </div>
 
@@ -575,16 +596,41 @@
         modeSelect.addEventListener('change', () => {
             gameMode = modeSelect.value;
             document.getElementById('btnAddTeam').disabled = (gameMode === 'ai');
-            document.getElementById('aiDifficultyArea').style.display = (gameMode === 'ai') ? 'block' : 'none';
-            if (gameMode === 'ai' && teams.length > 2) { teams = teams.slice(0, 2); renderTeamSetup(); }
+            const display = document.getElementById('aiDifficultyDisplay');
+            
+            if (gameMode === 'ai') {
+                display.style.display = 'inline-block';
+                showAiDifficultyModal();
+                if (teams.length > 2) { teams = teams.slice(0, 2); renderTeamSetup(); }
+            } else {
+                display.style.display = 'none';
+            }
         });
+
+        function showAiDifficultyModal() {
+            SoundEffect.playClick();
+            document.getElementById('aiDifficultyModal').style.display = 'flex';
+        }
+
+        function closeAiModal() {
+            SoundEffect.playClick();
+            document.getElementById('aiDifficultyModal').style.display = 'none';
+        }
+
+        function setAiDifficulty(diff) {
+            aiDifficulty = diff;
+            const names = { 'easy': '🤖 초보', 'normal': '🤖 보통', 'hard': '🤖 고수' };
+            document.getElementById('aiDifficultyDisplay').innerText = `${names[diff]} ⚙️`;
+            closeAiModal();
+        }
 
         function initGame() {
             SoundEffect.init(); SoundEffect.playClick();
             const maxVal = parseInt(document.getElementById('undoCountInput').value) || 2;
             tokensPerTeam = parseInt(document.getElementById('tokenCountInput').value) || 2;
             gameState.maxUndos = maxVal; isPowerUpMode = document.getElementById('powerUpMode').checked;
-            gameMode = modeSelect.value; aiDifficulty = document.getElementById('aiDifficulty').value;
+            gameMode = modeSelect.value; 
+            // aiDifficulty는 모달에서 이미 설정됨 (기본값 'normal')
             if (gameMode === 'ai') {
                 if (teams.length > 2) teams = teams.slice(0, 2);
                 const aiNames = { 'easy': '꼬마 도야', 'normal': '영리한 돗개', 'hard': '전설의 윷신' };
