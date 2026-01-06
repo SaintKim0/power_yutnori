@@ -551,7 +551,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.10 (온라인 UI 및 안정성 강화판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.11 (전역 변수 오류 수정판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -708,6 +708,19 @@
         let gameMode = 'multi'; // multi, ai, online
         let topMode = 'together'; // alone, together
         let aiDifficulty = 'normal';
+        let aiTimeoutId = null;
+        const aiActionDelay = 2500;
+
+        // 온라인 대전 관련 변수 (PeerJS 기반)
+        let peer = null;
+        let connections = []; // 호스트일 경우 모든 클라이언트 연결 저장
+        let conn = null; // 클라이언트일 경우 호스트와의 연결 저장
+        let isHost = false;
+        let isOnlineMode = false;
+        let onlineRoomId = null;
+        let myTeamIdx = null; 
+        let onlinePlayerName = "플레이어";
+        let isConnecting = false;
 
         function selectTopMode(mode) {
             SoundEffect.playClick();
@@ -903,8 +916,6 @@
         function addTeamData(colorIdx) { if (teams.length >= 4) return; const c = TEAM_COLORS[colorIdx]; teams.push({ id: teams.length, name: c.name, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }); }
         function addTeam() { SoundEffect.playClick(); if (teams.length >= 4) return alert("최대 4팀"); addTeamData(teams.length); renderTeamSetup(); }
         function removeTeam(idx) { SoundEffect.playClick(); teams.splice(idx, 1); teams.forEach((t, i) => { t.id = i; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); renderTeamSetup(); }
-
-        let isConnecting = false;
 
         function initP2P(customId, callback) {
             // 커스텀 ID(방장 코드)가 제공되었는데 현재 Peer와 ID가 다르다면 새로 생성해야 함
