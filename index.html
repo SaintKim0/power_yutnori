@@ -551,7 +551,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.9 (온라인 접속 명단 및 버그 수정판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.10 (온라인 UI 및 안정성 강화판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -758,6 +758,7 @@
             const btnAdd = document.getElementById('btnAddTeam');
             const teamArea = document.getElementById('commonTeamArea');
             const teamLabel = document.getElementById('teamListLabel');
+            const teamList = document.getElementById('teamList');
 
             if (mode === 'multi') {
                 btnOffline.style.background = 'var(--accent-color)';
@@ -772,6 +773,13 @@
                 btnAdd.style.display = 'block';
                 btnAdd.disabled = false;
                 btnAdd.style.opacity = "1";
+                
+                // 오프라인 모드일 때 기본 팀 복구 (비어있다면)
+                if (teams.length === 0) {
+                    addTeamData(0);
+                    addTeamData(1);
+                }
+                renderTeamSetup();
             } else {
                 btnOnline.style.background = 'var(--accent-color)';
                 btnOnline.style.color = 'white';
@@ -782,9 +790,14 @@
                 offlineArea.style.display = 'none';
                 teamArea.style.display = 'block';
                 teamLabel.innerText = "현재 접속 인원";
-                btnAdd.style.display = 'none'; // 온라인은 팀추가 버튼 숨김
+                btnAdd.style.display = 'none';
                 btnAdd.disabled = true;
                 btnAdd.style.opacity = "0.4";
+                
+                // 온라인 대전 진입 시 오프라인 팀 명단 삭제 및 대기 상태 표시
+                teams = [];
+                teamList.innerHTML = `<li style="padding:15px; color:#86868b; font-size:0.8rem; text-align:center; width:100%;">방 만들기 또는 참가 후 대기하세요...</li>`;
+                
                 initP2P();
             }
             btnStart.style.display = 'block';
@@ -1020,11 +1033,11 @@
         }
 
         function createOnlineRoom() {
-            // 연결 중이면 대기 알림만 주고 리턴하지 않음 (initP2P에서 처리)
-            if (isConnecting) {
-                showToast("연결 준비 중", "잠시만 기다려주세요...");
+            // 이미 방장 모드이고 ID가 생성되었다면 중복 생성 방지
+            if (isHost && onlineRoomId && document.getElementById('roomInfoDisplay').style.display === 'block') {
+                return;
             }
-            
+
             onlinePlayerName = ProfileManager.data.nickname;
             isHost = true;
             
@@ -1032,16 +1045,14 @@
             const shortId = generateRoomId();
             
             showToast("방 생성 중...", shortId);
-            initP2P(shortId, () => {
-                // PeerJS가 멋대로 UUID를 부여한 경우, 강제로 연결 끊고 다시 시도
-                if (peer.id.length > 10) {
-                    peer.destroy();
-                    peer = null;
-                    isConnecting = false;
-                    setTimeout(createOnlineRoom, 300);
-                    return;
-                }
+            
+            // 방장 생성 전 기존 Peer가 있다면 정리
+            if (peer && !peer.destroyed) {
+                peer.destroy();
+                peer = null;
+            }
 
+            initP2P(shortId, () => {
                 onlineRoomId = peer.id; 
                 myTeamIdx = 0;
                 // peerId와 avatar를 팀 정보에 추가 (방장 자신)
