@@ -2,31 +2,28 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <!-- 모바일 뷰포트 설정: 확대 방지, 앱 스타일 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#fbe9e7">
+    <meta name="theme-color" content="#f5f5f7">
     <meta name="description" content="웹 브라우저에서 즐기는 한국 전통 민속놀이 '윷놀이' 게임">
-    
-    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
-    
-    <!-- iOS 아이콘 -->
     <link rel="apple-touch-icon" href="/icon-192.png">
-    
     <title>파워 게이지 윷놀이</title>
     <style>
         :root {
-            --primary-color: #5d4037;
-            --bg-color: #fbe9e7;
-            --stick-color: #deb887;
+            --primary-color: #3a2d28;
+            --bg-color: #f5f5f7;
+            --accent-color: #0071e3;
+            --stick-color: #d2b48c;
             --board-line-color: #8d6e63;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --glass-bg: rgba(255, 255, 255, 0.7);
         }
 
         body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg-color);
             display: flex;
             flex-direction: column;
@@ -35,11 +32,12 @@
             margin: 0;
             padding: 3px;
             box-sizing: border-box;
+            color: #1d1d1f;
             overflow-x: hidden;
-            touch-action: manipulation; /* 터치 지연 제거 */
-            -webkit-user-select: none; /* 텍스트 선택 방지 */
+            touch-action: manipulation;
+            -webkit-user-select: none;
             user-select: none;
-            overscroll-behavior: none; /* 스크롤 바운스 방지 */
+            overscroll-behavior: none;
         }
 
         .app-shell {
@@ -51,92 +49,77 @@
 
         h1 {
             color: var(--primary-color);
-            margin: 2px 0 4px 0;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            font-size: 0.95rem;
+            margin: 4px 0 8px 0;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            font-size: 1.1rem;
         }
 
-        /* 설정 영역 */
-        #setupArea {
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        #setupArea, .control-section, .board-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.3);
             margin-top: 10px;
-            text-align: center;
-            display: block;
-            width: 90%;
-            max-width: 400px;
-            z-index: 10;
+            padding: 12px;
+            box-sizing: border-box;
         }
 
-        /* 게임 영역 레이아웃 - 모바일 세로 배치 최적화 */
+        #setupArea { width: 90%; max-width: 400px; text-align: center; }
+
         .game-wrapper {
             display: none;
             flex-direction: column;
             align-items: center;
             width: 100%;
             max-width: 500px;
-            gap: 4px;
-            padding-bottom: 2px;
-            margin-top: -12px;
+            gap: 12px;
+            padding-bottom: 20px;
+            margin-top: -10px;
         }
 
-        /* 왼쪽: 보드 (반응형 적용) */
         .board-section {
-            background: white;
-            padding: 6px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             display: flex;
             justify-content: center;
-            width: 92%; /* 모바일 꽉 차게 */
-            aspect-ratio: 1/1; /* 정사각형 유지 */
+            width: 92%;
+            aspect-ratio: 1/1;
         }
 
-        /* 오른쪽: 컨트롤 패널 */
-        .control-section {
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 95%;
-            box-sizing: border-box;
-        }
+        .control-section { width: 95%; text-align: center; }
 
-        /* 상태 표시줄 */
         .status-bar {
-            background: #eee;
-            border-radius: 8px;
-            padding: 4px 6px;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 0.8rem;
+            background: rgba(0,0,0,0.03);
+            border-radius: 14px;
+            padding: 6px 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        .current-turn {
-            color: white;
-            background-color: #333;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            font-weight: 600;
         }
 
-        /* 윷가락 */
+        .current-turn {
+            color: white;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
         .yut-container {
             display: flex;
             justify-content: center;
-            gap: 5px;
-            margin-bottom: 5px;
+            gap: 6px;
+            margin-bottom: 8px;
             height: 45px;
         }
         .stick {
             width: 18px;
             height: 45px;
-            border-radius: 5px;
+            border-radius: 6px;
             border: 2px solid #5d4037;
             display: flex;
             align-items: center;
@@ -146,20 +129,18 @@
             background-color: var(--stick-color);
             transition: transform 0.3s;
             position: relative;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.15);
         }
         .stick.flat { background-color: #fff8e1; color: #333; }
-        .stick.flat::after { content: "XXXX"; transform: rotate(90deg); font-size: 7px; letter-spacing: 1px; }
-        
-        /* 백도(Back-Do) 표시 */
+        .stick.flat::after { content: "XXXX"; transform: rotate(90deg); font-size: 7px; letter-spacing: 1px; opacity: 0.6; }
         .stick.back-do-mark::before {
             content: "빽";
             position: absolute;
             top: 2px;
-            color: red;
+            color: #ff3b30;
             font-size: 9px;
             font-weight: bold;
-            border: 1px solid red;
+            border: 1px solid #ff3b30;
             border-radius: 50%;
             width: 12px;
             height: 12px;
@@ -167,209 +148,206 @@
             display: block;
         }
 
-        /* 게이지 */
         .gauge-wrapper {
             position: relative;
             width: 100%;
-            height: 25px; /* 터치하기 좋게 조금 키움 */
-            background: #e0e0e0;
-            border-radius: 12px;
+            height: 28px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 14px;
             overflow: hidden;
-            margin-bottom: 8px;
-            border: 2px solid #333;
+            margin-bottom: 12px;
+            border: 1px solid rgba(0,0,0,0.1);
         }
-        .zone { position: absolute; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: rgba(0,0,0,0.5); }
-        .zone-weak { left: 0; width: 10%; background: #ffcdd2; }
-        .zone-safe { left: 10%; width: 80%; background: #e8f5e9; }
-        .zone-over { right: 0; width: 10%; background: #ffcdd2; }
-        .power-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff9800, #f44336); position: absolute; top: 0; left: 0; opacity: 0.9; }
+        .power-bar { 
+            height: 100%; width: 0%; 
+            background: linear-gradient(90deg, #34c759, #ff3b30);
+            position: absolute; top: 0; left: 0; 
+            transition: width 0.05s linear;
+        }
+        .zone { position: absolute; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: rgba(0,0,0,0.3); }
+        .zone-weak { left: 0; width: 10%; background: rgba(255, 59, 48, 0.05); }
+        .zone-safe { left: 10%; width: 80%; background: rgba(52, 199, 89, 0.05); }
+        .zone-over { right: 0; width: 10%; background: rgba(255, 59, 48, 0.05); }
 
-        /* 버튼들 - 모바일 터치 최적화 */
         .btn-primary {
-            background-color: #d84315; color: white; border: none; padding: 8px;
-            font-size: 0.95rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold;
-            transition: transform 0.1s, background 0.2s;
-            box-shadow: 0 2px 0 #9f2a08; /* 입체감 */
-            touch-action: manipulation;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);
         }
-        .btn-primary:active { transform: translateY(3px); box-shadow: none; }
-        .btn-primary:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+        .btn-primary:disabled { background-color: #d1d1d6; box-shadow: none; transform: none; }
         
         .btn-secondary {
-            background-color: #5d4037; color: white; border: none; padding: 10px 16px;
-            border-radius: 8px; cursor: pointer; margin: 4px; font-size: 0.9rem;
+            background-color: #8e8e93; color: white; border: none; padding: 10px 16px;
+            border-radius: 12px; cursor: pointer; margin: 4px; font-size: 0.9rem;
+            transition: all 0.2s;
         }
-        
+        .btn-secondary:active { transform: scale(0.95); }
+
         .btn-info {
-            background-color: #0288d1; color: white; border: none; padding: 10px 16px;
-            border-radius: 8px; cursor: pointer; margin-top: 10px; font-size: 0.9rem; width: 100%;
+            background-color: var(--accent-color); color: white; border: none; padding: 10px 16px;
+            border-radius: 12px; cursor: pointer; margin-top: 10px; font-size: 0.9rem; width: 100%;
+            font-weight: 600;
         }
         
         .btn-sound-toggle {
-             background-color: #4caf50; color: white; border: none; padding: 8px;
-             border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%;
+            background-color: #34c759; color: white; border: none; padding: 10px;
+            border-radius: 12px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%;
+            font-weight: 600;
         }
 
         .btn-undo {
-            background-color: #757575; color: white; border: none; padding: 6px;
-            font-size: 0.8rem; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 6px;
-            display: none; box-shadow: 0 2px 0 #555;
-        }
-        .btn-undo:active { transform: translateY(2px); box-shadow: none; }
-
-        /* 패(Move) 선택 버튼 영역 */
-        #availableMoves {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            justify-content: center;
-            margin-bottom: 6px;
-        }
-        .move-chip {
-            padding: 5px 12px;
-            border-radius: 18px;
-            border: 2px solid #5d4037;
-            background: white;
-            font-weight: bold;
-            cursor: pointer;
-            color: #5d4037;
+            background-color: #f2f2f7; color: #1d1d1f; border: 1px solid rgba(0,0,0,0.1); padding: 10px;
+            font-size: 0.85rem; border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
+            font-weight: 600; display: none;
             transition: all 0.2s;
-            font-size: 0.85rem;
+        }
+        .btn-undo:active { transform: scale(0.98); background: #e5e5ea; }
+
+        .move-chip {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+            color: #1d1d1f;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .move-chip.selected {
-            background: #5d4037;
+            background: var(--accent-color);
             color: white;
-            transform: scale(1.05);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
         }
-        .move-chip.back-do {
-            border-color: red;
-            color: red;
-        }
-        .move-chip.back-do.selected {
-            background: red;
-            color: white;
-        }
+        .move-chip.back-do { border-color: #ff3b30; color: #ff3b30; }
+        .move-chip.back-do.selected { background: #ff3b30; color: white; border-color: #ff3b30; }
 
-        /* 말 선택 버튼 영역 */
-        #moveOptions {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            margin-top: 2px;
-        }
+        #moveOptions { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
         .btn-move-token {
-            background: white; border: 2px solid #ddd; padding: 6px; border-radius: 8px;
-            text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            background: white; border: 1px solid rgba(0,0,0,0.1); padding: 10px; border-radius: 14px;
+            text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px;
             transition: all 0.2s;
-            touch-action: manipulation;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
         }
-        .btn-move-token:active { background: #eee; }
-        
-        /* SVG 보드 (반응형) */
-        #yutBoard {
-            width: 100%;
-            height: 100%; /* 부모 컨테이너에 맞춤 */
-            background-color: #fff3e0;
-            border-radius: 10px; border: 3px solid #5d4037;
-            display: block;
-        }
-        .board-dot { fill: white; stroke: var(--board-line-color); stroke-width: 2; }
-        .board-dot.start { fill: #ffe0b2; stroke: #e65100; stroke-width: 3; }
-        .board-dot.corner { fill: #efebe9; }
-        .board-dot.center { fill: #d7ccc8; stroke-width: 3; }
-        .board-line { stroke: var(--board-line-color); stroke-width: 3; stroke-linecap: round; fill: none;}
+        .btn-move-token:active { background: #f2f2f7; transform: scale(0.98); }
 
-        /* 말 스타일 */
+        #yutBoard { width: 100%; height: 100%; background-color: #fffcf5; border-radius: 16px; border: 2px solid #5d4037; display: block; }
+        .board-dot { fill: white; stroke: var(--board-line-color); stroke-width: 2; }
+        .board-dot.start { fill: #ffe0b2; stroke: #ff9500; stroke-width: 3; }
+        .board-dot.corner { fill: #f2f2f7; }
+        .board-dot.center { fill: #e5e5ea; stroke-width: 3; }
+        .board-line { stroke: var(--board-line-color); stroke-width: 2.5; stroke-linecap: round; fill: none; opacity: 0.6;}
+
         .token {
             stroke: white; stroke-width: 2;
-            transition: cx 0.5s ease, cy 0.5s ease;
-            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5));
+            transition: cx 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), cy 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.2));
         }
-        .token-text {
-            fill: white; font-size: 10px; font-weight: bold; text-anchor: middle; pointer-events: none;
-        }
-
-        .result-text { font-size: 1.1rem; font-weight: bold; margin: 2px 0; color: #333; height: 26px;}
-        .info-text { color: #666; font-size: 0.75rem; margin-bottom: 5px; }
         
-        /* 설정 인풋 스타일 */
-        .input-group { margin: 10px 0; text-align: left; background: #f5f5f5; padding: 12px; border-radius: 12px; }
-        .input-group label { font-weight: bold; display: block; margin-bottom: 6px; color: #555; font-size: 0.9rem;}
-        .input-group input,
-        .input-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box;}
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shake { animation: shake 0.4s; }
 
-        /* 모달 (Modal) 스타일 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --primary-color: #f5f5f7;
+                --board-line-color: #a1887f;
+                --card-bg: rgba(28, 28, 30, 0.8);
+            }
+            body { background-color: var(--bg-color); color: #f5f5f7; }
+            #setupArea, .control-section, .board-section {
+                background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1);
+            }
+            .status-bar { background: rgba(255,255,255,0.05); }
+            .move-chip { background: #2c2c2e; color: #f5f5f7; border-color: rgba(255,255,255,0.1); }
+            .btn-move-token { background: #2c2c2e; color: #f5f5f7; border-color: rgba(255,255,255,0.1); }
+            .btn-move-token:active { background: #3a3a3c; }
+            #yutBoard { background-color: #1c1c1e; border-color: #3a2d28; }
+            .input-group { background: rgba(255,255,255,0.05); }
+            .input-group input, .input-group select { background: #2c2c2e; color: white; border-color: rgba(255,255,255,0.1); }
+            .skill-container { background: rgba(255,255,255,0.05); }
+            .btn-skill { background: #2c2c2e; color: white; border-color: rgba(255,255,255,0.1); }
+            .btn-undo { background: #2c2c2e; color: #f5f5f7; border-color: rgba(255,255,255,0.1); }
+        }
+
+        .result-text { font-size: 1.2rem; font-weight: 700; margin: 8px 0; color: #1d1d1f; height: 28px; letter-spacing: -0.01em;}
+        @media (prefers-color-scheme: dark) { .result-text { color: #f5f5f7; } }
+        .info-text { color: #86868b; font-size: 0.8rem; margin-bottom: 8px; }
+        
+        .input-group { margin: 12px 0; text-align: left; background: rgba(0,0,0,0.03); padding: 16px; border-radius: 18px; }
+        .input-group label { font-weight: 600; display: block; margin-bottom: 8px; color: #3a3a3c; font-size: 0.9rem;}
+        @media (prefers-color-scheme: dark) { .input-group label { color: #f5f5f7; } }
+        .input-group input,
+        .input-group select { width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; font-size: 1rem; box-sizing: border-box; background: white; }
+
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(2px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         }
         .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            max-width: 450px;
-            width: 85%;
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            z-index: 1001;
-            max-height: 85vh;
-            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            padding: 30px; border-radius: 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.4); max-width: 450px; width: 85%;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; z-index: 1001; max-height: 85vh; overflow-y: auto;
         }
-        .modal-title { font-size: 1.6rem; margin-bottom: 12px; font-weight: bold; color: #d84315; }
-        .modal-desc { font-size: 1rem; margin-bottom: 20px; color: #555; line-height: 1.5; text-align: left; word-break: keep-all;}
+        @media (prefers-color-scheme: dark) { .modal-content { background: rgba(28, 28, 30, 0.85); border: 1px solid rgba(255,255,255,0.1); color: #f5f5f7; } }
+        .modal-title { font-size: 1.6rem; margin-bottom: 12px; font-weight: 800; color: var(--accent-color); letter-spacing: -0.02em; }
+        .modal-desc { font-size: 0.95rem; margin-bottom: 24px; color: #3a3a3c; line-height: 1.6; text-align: left; word-break: keep-all;}
+        @media (prefers-color-scheme: dark) { .modal-desc { color: #f5f5f7; } }
         
-        .rule-list { text-align: left; padding-left: 20px; margin-bottom: 15px; color: #444; font-size: 0.85rem; }
+        .rule-list { text-align: left; padding-left: 20px; margin-bottom: 15px; color: inherit; font-size: 0.85rem; }
         .rule-list li { margin-bottom: 8px; }
 
-        @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* 스킬 영역 */
         .skill-container {
-            display: flex;
-            justify-content: center;
-            gap: 4px;
-            margin-top: 5px;
-            padding: 5px;
-            background: #f0f0f0;
-            border-radius: 10px;
+            display: flex; justify-content: center; gap: 8px; margin-top: 8px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 16px;
         }
         .btn-skill {
-            flex: 1;
-            padding: 4px 2px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: white;
-            font-size: 0.65rem;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.2s;
+            flex: 1; padding: 8px 4px; border: 1px solid rgba(0,0,0,0.05); border-radius: 14px; background: white; font-size: 0.7rem; font-weight: 600;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
-        .btn-skill:active:not(:disabled) { transform: translateY(2px); background: #eee; }
-        .btn-skill:disabled { opacity: 0.5; cursor: not-allowed; }
-        .skill-icon { font-size: 1rem; margin-bottom: 1px; }
-        .skill-cost { font-size: 0.55rem; color: #d84315; font-weight: bold; }
-        .sp-display {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #d84315;
-            margin-left: 5px;
-        }
+        .btn-skill:active:not(:disabled) { transform: scale(0.95); background: #f2f2f7; }
+        .btn-skill:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+        .skill-icon { font-size: 1.2rem; margin-bottom: 2px; }
+        .skill-cost { font-size: 0.6rem; color: var(--accent-color); font-weight: 700; margin-top: 2px;}
+        .sp-display { font-size: 0.85rem; font-weight: 700; color: #ff3b30; margin-left: 8px; }
 
+        .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+        .badge-item { 
+            background: rgba(0,0,0,0.03); padding: 10px 5px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; filter: grayscale(1); opacity: 0.5; transition: all 0.3s;
+        }
+        .badge-item.active { filter: grayscale(0); opacity: 1; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border: 1px solid rgba(0,113,227,0.1); }
+        .badge-icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .badge-name { font-size: 0.65rem; font-weight: 700; color: #1d1d1f; text-align: center; }
+        @media (prefers-color-scheme: dark) { .badge-item { background: rgba(255,255,255,0.05); } .badge-item.active { background: #2c2c2e; } .badge-name { color: #f5f5f7; } }
+        .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.9rem; }
+        @media (prefers-color-scheme: dark) { .stat-row { border-bottom-color: rgba(255,255,255,0.05); } }
+        .stat-label { color: #86868b; font-weight: 500; }
+        .stat-value { font-weight: 700; color: var(--accent-color); }
     </style>
 </head>
 <body>
@@ -377,1560 +355,444 @@
     <div class="app-shell">
         <h1>🥏 모바일 윷놀이</h1>
 
-    <!-- 1. 설정 화면 -->
     <div id="setupArea">
-        <h2 style="margin-top:0;">게임 설정</h2>
-        
-        <div class="input-group">
-            <label for="tokenCountInput">말 개수 (팀당)</label>
-            <input type="number" id="tokenCountInput" value="2" min="1" max="5" inputmode="numeric">
-        </div>
-
-        <div class="input-group">
-            <label for="undoCountInput">팀별 물리기 횟수</label>
-            <input type="number" id="undoCountInput" value="2" min="0" max="10" inputmode="numeric">
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <p style="font-weight: bold; color: #555;">참가할 팀 (기본 2팀)</p>
-            <ul id="teamList" style="list-style: none; padding: 0;">
-                <!-- JS로 팀 리스트 생성 -->
-            </ul>
-            <button id="btnAddTeam" class="btn-secondary" style="width:100%" onclick="addTeam()">+ 팀 추가</button>
-        </div>
-
-        <div class="input-group">
-            <label for="modeSelect">플레이 모드</label>
-            <select id="modeSelect">
-                <option value="multi">멀티플레이 (다수 팀)</option>
-                <option value="ai">AI와 플레이 (혼자용)</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">
-                파워업 모드 (특수 스킬)
-            </label>
-        </div>
-
-        <div id="aiDifficultyArea" class="input-group" style="display: none;">
-            <label for="aiDifficulty">AI 캐릭터 (난이도)</label>
-            <select id="aiDifficulty">
-                <option value="easy">꼬마 도야 (초보)</option>
-                <option value="normal" selected>영리한 돗개 (보통)</option>
-                <option value="hard">전설의 윷신 (고수)</option>
-            </select>
-        </div>
-        
+        <h2 style="margin-top:0; font-weight:800; letter-spacing:-0.03em;">게임 설정</h2>
+        <div class="input-group"><label for="tokenCountInput">말 개수 (팀당)</label><input type="number" id="tokenCountInput" value="2" min="1" max="5" inputmode="numeric"></div>
+        <div class="input-group"><label for="undoCountInput">팀별 물리기 횟수</label><input type="number" id="undoCountInput" value="2" min="0" max="10" inputmode="numeric"></div>
+        <div style="margin-bottom: 20px;"><p style="font-weight: 600; color: #86868b; font-size: 0.9rem;">참가할 팀 (기본 2팀)</p><ul id="teamList" style="list-style: none; padding: 0;"></ul><button id="btnAddTeam" class="btn-secondary" style="width:100%; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600;" onclick="addTeam()">+ 팀 추가</button></div>
+        <div class="input-group"><label for="modeSelect">플레이 모드</label><select id="modeSelect"><option value="multi">멀티플레이 (다수 팀)</option><option value="ai">AI와 플레이 (혼자용)</option></select></div>
+        <div class="input-group"><label style="display: flex; align-items: center; cursor: pointer;"><input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">파워업 모드 (특수 스킬)</label></div>
+        <div id="aiDifficultyArea" class="input-group" style="display: none;"><label for="aiDifficulty">AI 캐릭터 (난이도)</label><select id="aiDifficulty"><option value="easy">꼬마 도야 (초보)</option><option value="normal" selected>영리한 돗개 (보통)</option><option value="hard">전설의 윷신 (고수)</option></select></div>
         <button class="btn-primary" onclick="initGame()">게임 시작 ▶</button>
-        
         <div style="display:flex; gap:10px; margin-top: 15px;">
-            <button class="btn-info" style="margin-top:0; flex:1;" onclick="showRules()">📖 게임방법</button>
-            <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
+            <button class="btn-info" style="margin-top:0; flex:1; background:#8e8e93;" onclick="showRules()">📖 게임방법</button>
+            <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
+        <button class="btn-sound-toggle" style="width:100%;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
     </div>
 
-    <!-- 2. 게임 화면 -->
     <div class="game-wrapper" id="gameWrapper">
-        <!-- 왼쪽: 보드 -->
         <div class="board-section">
             <svg id="yutBoard" viewBox="0 0 400 400">
-                <!-- 보드 선 -->
                 <path d="M 350 350 L 350 50 L 50 50 L 50 350 L 350 350" class="board-line" />
                 <path d="M 50 50 L 350 350" class="board-line" />
                 <path d="M 350 50 L 50 350" class="board-line" />
-                
-                <!-- 점(Dots) 그룹 -->
-                <g id="boardDots"></g>
-                
-                <!-- 말(Tokens) 그룹 -->
-                <g id="tokenLayer"></g>
+                <g id="boardDots"></g><g id="tokenLayer"></g>
             </svg>
         </div>
-
-        <!-- 오른쪽 컨트롤 -->
         <div class="control-section">
-            <div class="status-bar">
-                <span id="turnIndicator" class="current-turn">청팀 차례</span>
-                <span id="gameInfo" style="font-size:0.9rem">말 2개 / 4팀</span>
-                <span id="spDisplay" class="sp-display" style="display: none;">SP: 3</span>
-            </div>
-
-            <!-- 스킬 버튼 영역 -->
+            <div class="status-bar"><span id="turnIndicator" class="current-turn">청팀 차례</span><span id="gameInfo" style="font-size:0.8rem; color:#86868b">말 2개 / 2팀</span><span id="spDisplay" class="sp-display" style="display: none;">SP: 3</span></div>
             <div id="skillArea" class="skill-container" style="display: none;">
-                <button class="btn-skill" onclick="useSkill('shield')" id="skillShield">
-                    <span class="skill-icon">🛡️</span>
-                    <span>방어막</span>
-                    <span class="skill-cost">1 SP</span>
-                </button>
-                <button class="btn-skill" onclick="useSkill('reroll')" id="skillReroll">
-                    <span class="skill-icon">🔄</span>
-                    <span>재도전</span>
-                    <span class="skill-cost">1 SP</span>
-                </button>
-                <button class="btn-skill" onclick="useSkill('boost')" id="skillBoost">
-                    <span class="skill-icon">⚡</span>
-                    <span>부스트</span>
-                    <span class="skill-cost">2 SP</span>
-                </button>
+                <button class="btn-skill" onclick="useSkill('shield')" id="skillShield"><span class="skill-icon">🛡️</span><span>방어막</span><span class="skill-cost">1 SP</span></button>
+                <button class="btn-skill" onclick="useSkill('reroll')" id="skillReroll"><span class="skill-icon">🔄</span><span>재도전</span><span class="skill-cost">1 SP</span></button>
+                <button class="btn-skill" onclick="useSkill('boost')" id="skillBoost"><span class="skill-icon">⚡</span><span>부스트</span><span class="skill-cost">2 SP</span></button>
             </div>
-
-            <!-- 윷가락 시각화 -->
-            <div class="yut-container" id="yutContainer">
-                <div class="stick round"></div>
-                <div class="stick round"></div>
-                <div class="stick round"></div>
-                <div class="stick round"></div> <!-- 백도 표시될 윷 -->
-            </div>
-
-            <div class="result-text" id="mainResult">준비</div>
-            <div class="info-text" id="subResult">버튼을 눌러 힘을 조절하세요!</div>
-
-            <!-- 파워 게이지 (던질 때만 보임) -->
-            <div id="gaugeArea">
-                <div class="gauge-wrapper">
-                    <div class="zone zone-weak">약함</div>
-                    <div class="zone zone-safe">성공</div>
-                    <div class="zone zone-over">낙장</div>
-                    <div class="power-bar" id="powerBar"></div>
-                </div>
-                <button class="btn-primary" id="actionBtn" onclick="toggleThrow()">던지기 (START)</button>
-            </div>
-
-            <!-- 이동 선택 영역 (이동 시에만 보임) -->
+            <div class="yut-container" id="yutContainer"><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div></div>
+            <div class="result-text" id="mainResult">준비</div><div class="info-text" id="subResult">버튼을 눌러 힘을 조절하세요!</div>
+            <div id="gaugeArea"><div class="gauge-wrapper"><div class="zone zone-weak">약함</div><div class="zone zone-safe">성공</div><div class="zone zone-over">낙장</div><div class="power-bar" id="powerBar"></div></div><button class="btn-primary" id="actionBtn" onclick="toggleThrow()">던지기 (START)</button></div>
             <div id="moveArea" style="display: none;">
-                <div style="font-size:0.85rem; font-weight:bold; color:#555; margin-bottom:6px;">패 선택</div>
-                <div id="availableMoves"></div>
-                
-                <div style="font-size:0.85rem; font-weight:bold; color:#555; margin-top:10px; margin-bottom:6px;">이동할 말 선택</div>
-                <div id="moveOptions"></div>
+                <div style="font-size:0.8rem; font-weight:700; color:#86868b; margin-bottom:6px; text-align:left; padding-left:4px;">패 선택</div><div id="availableMoves" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:10px;"></div>
+                <div style="font-size:0.8rem; font-weight:700; color:#86868b; margin-top:10px; margin-bottom:6px; text-align:left; padding-left:4px;">이동할 말 선택</div><div id="moveOptions"></div>
             </div>
-
-            <!-- 물리기 버튼 -->
             <button id="btnUndo" class="btn-undo" onclick="undoLastMove()">↩ 물리기 (2회 남음)</button>
         </div>
     </div>
 
-    <!-- 3. 승리 모달 -->
-    <div id="winModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-title" id="winTitle">승리!</div>
-            <div class="modal-desc" id="winDesc">모든 말이 완주했습니다!</div>
-            <button class="btn-primary" onclick="location.reload()">다시 하기</button>
-        </div>
-    </div>
-
-    <!-- 4. 게임 방법 모달 -->
-    <div id="ruleModal" class="modal-overlay">
-        <div class="modal-content" style="text-align: left;">
-            <div class="modal-title" style="text-align: center;">📜 게임 방법</div>
-            <div class="modal-desc">
-                <ul class="rule-list">
-                    <li><strong>던지기:</strong> 파워 게이지의 초록색 구간에 맞춰 버튼을 누르세요.</li>
-                    <li><strong>보너스:</strong> '윷', '모' 또는 상대 말을 잡으면 한 번 더 던집니다.</li>
-                    <li><strong>업기:</strong> 자기 팀의 말이 같은 칸에 있으면 업어서 함께 이동합니다.</li>
-                    <li><strong>지름길:</strong> 모서리나 중앙 칸에 멈추면 지름길로 진입할 수 있습니다.</li>
-                    <li style="color: #d84315; font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li>
-                    <li style="font-size: 0.85rem; margin-bottom: 5px;">* 자신의 차례에 SP를 소모하여 스킬을 사용합니다.</li>
-                    <li><strong>SP 충전:</strong> 상대 말을 잡을 때마다 1 SP가 충전됩니다 (최대 5).</li>
-                    <li><strong>🛡️ 방어막 (1 SP):</strong> 내 말에 보호막을 씌워 상대의 잡기를 1회 방어합니다.</li>
-                    <li><strong>🔄 재도전 (1 SP):</strong> 현재 나온 패를 모두 취소하고 다시 던집니다.</li>
-                    <li><strong>⚡ 부스트 (2 SP):</strong> 즉시 2칸 전진하며, 이때 상대를 잡으면 <strong>보너스 던지기</strong> 기회를 얻습니다.</li>
-                </ul>
-            </div>
-            <button class="btn-secondary" style="width: 100%; background:#777;" onclick="closeRules()">닫기</button>
-        </div>
-    </div>
-
-    <!-- 5. 폭죽 캔버스 -->
-    <canvas id="confettiCanvas"></canvas>
+    <div id="winModal" class="modal-overlay"><div class="modal-content"><div class="modal-title" id="winTitle">승리!</div><div class="modal-desc" id="winDesc">모든 말이 완주했습니다!</div><button class="btn-primary" onclick="location.reload()">다시 하기</button></div></div>
+    <div id="ruleModal" class="modal-overlay"><div class="modal-content" style="text-align: left;"><div class="modal-title" style="text-align: center;">📜 게임 방법</div><div class="modal-desc"><ul class="rule-list"><li><strong>던지기:</strong> 파워 게이지의 성공 구간에 맞춰 버튼을 누르세요.</li><li><strong>보너스:</strong> '윷', '모' 또는 상대 말을 잡으면 한 번 더 던집니다.</li><li><strong>업기:</strong> 자기 팀의 말이 같은 칸에 있으면 함께 이동합니다.</li><li><strong>지름길:</strong> 모서리나 중앙 칸에 멈추면 지름길로 진입할 수 있습니다.</li><li style="color: var(--accent-color); font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li><li style="font-size: 0.8rem; margin-bottom: 5px;">* 자신의 차례에 SP를 소모하여 스킬을 사용합니다.</li><li><strong>SP 충전:</strong> 상대 말을 잡을 때마다 1 SP가 충전됩니다 (최대 5).</li><li><strong>🛡️ 방어막 (1 SP):</strong> 상대의 잡기를 1회 방어합니다.</li><li><strong>🔄 재도전 (1 SP):</strong> 패를 취소하고 다시 던집니다.</li><li><strong>⚡ 부스트 (2 SP):</strong> 즉시 2칸 전진하며, 이때 상대를 잡아도 보너스 던지기 기회를 얻습니다.</li></ul></div><button class="btn-secondary" style="width: 100%; background:#8e8e93;" onclick="closeRules()">닫기</button></div></div>
+    <div id="statsModal" class="modal-overlay"><div class="modal-content"><div class="modal-title">🏆 명예의 전당</div><div style="margin-bottom: 20px;"><div class="stat-row"><span class="stat-label">총 플레이</span><span class="stat-value" id="statTotalGames">0</span></div><div class="stat-row"><span class="stat-label">승리 횟수</span><span class="stat-value" id="statWins">0</span></div><div class="stat-row"><span class="stat-label">승률</span><span class="stat-value" id="statWinRate">0%</span></div><div class="stat-row"><span class="stat-label">최다 잡기 (한 게임)</span><span class="stat-value" id="statMaxCaptures">0</span></div></div><div style="font-weight: 800; font-size: 1rem; text-align: left; margin-top: 20px; color: var(--primary-color);">🏅 업적 배지</div><div class="badge-grid" id="badgeGrid"><div class="badge-item" id="badge_FIRST_WIN"><div class="badge-icon">🥇</div><div class="badge-name">첫 승리</div></div><div class="badge-item" id="badge_YUT_GOD"><div class="badge-icon">⚡</div><div class="badge-name">윷신윷왕</div></div><div class="badge-item" id="badge_CATCH_MASTER"><div class="badge-icon">🎯</div><div class="badge-name">사냥꾼</div></div><div class="badge-item" id="badge_STACK_KING"><div class="badge-icon">🏰</div><div class="badge-name">철벽기사</div></div><div class="badge-item" id="badge_BOOST_CATCH"><div class="badge-icon">🚀</div><div class="badge-name">고속도로</div></div><div class="badge-item" id="badge_SHIELD_SUCCESS"><div class="badge-icon">🛡️</div><div class="badge-name">방어성공</div></div></div><button class="btn-primary" style="margin-top: 30px; background: #8e8e93;" onclick="closeStats()">닫기</button></div></div>
+    <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; pointer-events:none; z-index:2000; display:none;"></canvas>
     </div>
 
     <script>
-        // --- 0. 사운드 관리 객체 (Web Audio API) ---
+        const GameStats = {
+            data: { totalGames: 0, wins: 0, maxCaptures: 0, achievements: [] },
+            currentSession: { captures: 0, yutMoCount: 0, maxStacked: 1, usedShield: false, usedBoost: false },
+            init: function() { const saved = localStorage.getItem('yutnori_stats'); if (saved) this.data = { ...this.data, ...JSON.parse(saved) }; },
+            save: function() { localStorage.setItem('yutnori_stats', JSON.stringify(this.data)); },
+            unlockAchievement: function(id) { if (!this.data.achievements.includes(id)) { this.data.achievements.push(id); this.save(); if (gameState.step !== 'SETUP') showMessage(`🏅 업적 달성: ${this.getAchievementName(id)}!`, "#ff9500"); return true; } return false; },
+            getAchievementName: function(id) { const names = { 'FIRST_WIN': '첫 승리', 'YUT_GOD': '윷신윷왕', 'CATCH_MASTER': '사냥꾼', 'STACK_KING': '철벽기사', 'BOOST_CATCH': '고속도로', 'SHIELD_SUCCESS': '방어성공' }; return names[id] || id; },
+            recordGameEnd: function(isWin) { this.data.totalGames++; if (isWin) { this.data.wins++; this.unlockAchievement('FIRST_WIN'); } if (this.currentSession.captures > this.data.maxCaptures) this.data.maxCaptures = this.currentSession.captures; if (this.currentSession.yutMoCount >= 5) this.unlockAchievement('YUT_GOD'); if (this.currentSession.captures >= 5) this.unlockAchievement('CATCH_MASTER'); if (this.currentSession.maxStacked >= 3) this.unlockAchievement('STACK_KING'); this.save(); },
+            resetSession: function() { this.currentSession = { captures: 0, yutMoCount: 0, maxStacked: 1, usedShield: false, usedBoost: false }; }
+        };
+        GameStats.init();
+
         const SoundEffect = {
-            ctx: null,
-            isMuted: false,
-
-            init: function() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioContext();
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-            },
-
-            toggleMute: function() {
-                this.isMuted = !this.isMuted;
-                const btn = document.querySelector('.btn-sound-toggle');
-                if(btn) btn.innerText = this.isMuted ? "🔇 소리 OFF" : "🔊 소리 ON";
-            },
-
-            playTone: function(freq, type, duration, startTime = 0) {
-                if (this.isMuted || !this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = type;
-                osc.frequency.value = freq;
-                
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                
-                const now = this.ctx.currentTime + startTime;
-                osc.start(now);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-                osc.stop(now + duration);
-            },
-
-            // 효과음들
+            ctx: null, isMuted: false,
+            init: function() { if (!this.ctx) { const AudioContext = window.AudioContext || window.webkitAudioContext; this.ctx = new AudioContext(); } if (this.ctx.state === 'suspended') this.ctx.resume(); },
+            toggleMute: function() { this.isMuted = !this.isMuted; const btn = document.querySelector('.btn-sound-toggle'); if(btn) btn.innerText = this.isMuted ? "🔇 소리 OFF" : "🔊 소리 ON"; },
+            playTone: function(freq, type, duration, startTime = 0) { if (this.isMuted || !this.ctx) return; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = type; osc.frequency.value = freq; osc.connect(gain); gain.connect(this.ctx.destination); const now = this.ctx.currentTime + startTime; osc.start(now); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + duration); osc.stop(now + duration); },
             playClick: function() { this.playTone(600, 'sine', 0.1); },
-            playStartGauge: function() { 
-                if (this.isMuted || !this.ctx) return;
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.frequency.setValueAtTime(200, now);
-                osc.frequency.linearRampToValueAtTime(600, now + 0.3);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0.001, now + 0.3);
-                osc.stop(now + 0.3);
-            },
-            playFail: function() {
-                // 띠로리~ (내려가는 소리)
-                this.playTone(400, 'sawtooth', 0.2, 0);
-                this.playTone(300, 'sawtooth', 0.4, 0.2);
-            },
-            playYutThrow: function() {
-                // 딩동댕 (성공)
-                this.playTone(523.25, 'sine', 0.1, 0); // 도
-                this.playTone(659.25, 'sine', 0.1, 0.1); // 미
-                this.playTone(783.99, 'sine', 0.2, 0.2); // 솔
-            },
-            playGoodThrow: function() {
-                // 윷/모/잡기 (강조)
-                this.playTone(523.25, 'square', 0.1, 0); 
-                this.playTone(783.99, 'square', 0.1, 0.1); 
-                this.playTone(1046.50, 'square', 0.3, 0.2); 
-            },
-            playMove: function() {
-                this.playTone(800, 'sine', 0.05);
-            },
-            playCatch: function() {
-                // 휙! 퍽!
-                if (this.isMuted || !this.ctx) return;
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0.001, now + 0.2);
-                osc.stop(now + 0.2);
-            },
-            playWin: function() {
-                // 팡파레
-                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
-                const times = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-                notes.forEach((freq, i) => {
-                    this.playTone(freq, 'triangle', 0.3, times[i]);
-                });
-            }
+            playStartGauge: function() { if (this.isMuted || !this.ctx) return; const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(600, now + 0.3); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.3); osc.stop(now + 0.3); },
+            playFail: function() { this.playTone(400, 'sawtooth', 0.2, 0); this.playTone(300, 'sawtooth', 0.4, 0.2); },
+            playYutThrow: function() { this.playTone(523.25, 'sine', 0.1, 0); this.playTone(659.25, 'sine', 0.1, 0.1); this.playTone(783.99, 'sine', 0.2, 0.2); },
+            playGoodThrow: function() { this.playTone(523.25, 'square', 0.1, 0); this.playTone(783.99, 'square', 0.1, 0.1); this.playTone(1046.50, 'square', 0.3, 0.2); },
+            playMove: function() { this.playTone(800, 'sine', 0.05); },
+            playCatch: function() { if (this.isMuted || !this.ctx) return; const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.2); osc.stop(now + 0.2); },
+            playWin: function() { const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50]; const times = [0, 0.2, 0.4, 0.6, 0.8, 1.0]; notes.forEach((freq, i) => this.playTone(freq, 'triangle', 0.3, times[i])); }
         };
 
-
-        // --- 1. 전역 설정 및 데이터 ---
-        const TEAM_COLORS = [
-            { name: "청팀", code: "#1976d2", text: "Blue" },
-            { name: "홍팀", code: "#d32f2f", text: "Red" },
-            { name: "초록팀", code: "#388e3c", text: "Green" },
-            { name: "노랑팀", code: "#fbc02d", text: "Yellow" }
-        ];
-
+        const TEAM_COLORS = [ { name: "청팀", code: "#0071e3" }, { name: "홍팀", code: "#ff3b30" }, { name: "초록팀", code: "#34c759" }, { name: "노랑팀", code: "#ffcc00" } ];
         let teams = [];
-        
-        // 게임 상태
-        let gameState = {
-            currentTeamIdx: 0,
-            step: 'SETUP', // SETUP, THROW, MOVE, END
-            moveQueue: [], // [ {score:4, text:'윷', id:123}, ... ]
-            selectedMoveId: null, // 현재 이동하려고 선택한 패의 ID
-            maxUndos: 2
-        };
-
-        // 물리기(Undo)를 위한 이전 상태 저장
+        let gameState = { currentTeamIdx: 0, step: 'SETUP', moveQueue: [], selectedMoveId: null, maxUndos: 2 };
         let historyState = null;
-
-        let tokensPerTeam = 2; // 기본값
-
-        // DOM 요소
-        const setupArea = document.getElementById('setupArea');
-        const gameWrapper = document.getElementById('gameWrapper');
-        const teamList = document.getElementById('teamList');
-        const boardDots = document.getElementById('boardDots');
-        const tokenLayer = document.getElementById('tokenLayer');
-        const turnIndicator = document.getElementById('turnIndicator');
-        const gameInfo = document.getElementById('gameInfo');
-        const mainResult = document.getElementById('mainResult');
-        const subResult = document.getElementById('subResult');
-        const actionBtn = document.getElementById('actionBtn');
-        const gaugeArea = document.getElementById('gaugeArea');
-        const moveArea = document.getElementById('moveArea');
-        const availableMoves = document.getElementById('availableMoves');
-        const moveOptions = document.getElementById('moveOptions');
-        const powerBar = document.getElementById('powerBar');
-        const sticks = document.getElementById('yutContainer').children;
-        const btnUndo = document.getElementById('btnUndo');
-        const undoCountInput = document.getElementById('undoCountInput');
-        const tokenCountInput = document.getElementById('tokenCountInput');
-        const winModal = document.getElementById('winModal');
-        const winTitle = document.getElementById('winTitle');
-        const ruleModal = document.getElementById('ruleModal');
-        const modeSelect = document.getElementById('modeSelect');
-        const addTeamBtn = document.getElementById('btnAddTeam');
-        const aiDifficultyArea = document.getElementById('aiDifficultyArea');
-        const aiDifficultySelect = document.getElementById('aiDifficulty');
-        const powerUpModeToggle = document.getElementById('powerUpMode');
-        const skillArea = document.getElementById('skillArea');
-        const spDisplay = document.getElementById('spDisplay');
-
-        let gameMode = 'multi';
+        let tokensPerTeam = 2;
         let isPowerUpMode = false;
+        let gameMode = 'multi';
         let aiDifficulty = 'normal';
         let aiTimeoutId = null;
-        const aiActionDelay = 1200;
+        const aiActionDelay = 2000;
 
-        // --- 2. 초기화 및 설정 로직 ---
+        function initSetup() { addTeamData(0); addTeamData(1); renderTeamSetup(); }
         function renderTeamSetup() {
             teamList.innerHTML = "";
-            teams.forEach((t, i) => {
-                teamList.innerHTML += `
-                    <li style="margin:5px; color:${t.color}; font-weight:bold;">
-                        ${t.name}
-                        ${t.isAi ? '<span style="font-size:0.75rem; margin-left:8px; color:#d32f2f;">(AI)</span>' : ''}
-                        ${i > 1 ? `<button onclick="removeTeam(${i})" style="font-size:0.8rem; cursor:pointer; background:#999; color:white; border:none; padding:4px 8px; border-radius:4px; margin-left:10px;">삭제</button>` : ''}
-                    </li>`;
-            });
+            teams.forEach((t, i) => { teamList.innerHTML += `<li style="margin:8px; color:${t.color}; font-weight:700; display:flex; justify-content:space-between; align-items:center;"><span>${t.name} ${t.isAi ? '(AI)' : ''}</span>${i > 1 ? `<button onclick="removeTeam(${i})" style="font-size:0.75rem; cursor:pointer; background:rgba(255,59,48,0.1); color:#ff3b30; border:none; padding:4px 10px; border-radius:8px; font-weight:700;">삭제</button>` : ''}</li>`; });
         }
+        function addTeamData(colorIdx) { if (teams.length >= 4) return; const c = TEAM_COLORS[colorIdx]; teams.push({ id: teams.length, name: c.name, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }); }
+        function addTeam() { SoundEffect.playClick(); if (teams.length >= 4) return alert("최대 4팀"); addTeamData(teams.length); renderTeamSetup(); }
+        function removeTeam(idx) { SoundEffect.playClick(); teams.splice(idx, 1); teams.forEach((t, i) => { t.id = i; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); renderTeamSetup(); }
 
-        function initSetup() {
-            addTeamData(0);
-            addTeamData(1);
-            renderTeamSetup();
-            modeSelect.value = gameMode;
-            addTeamBtn.disabled = (gameMode === 'ai');
-            // 백도 표시 (마지막 윷가락)
-            sticks[3].classList.add('back-do-mark');
-        }
-
-        function addTeamData(colorIdx) {
-            if (teams.length >= 4) return;
-            const c = TEAM_COLORS[colorIdx];
-            // 토큰 생성은 게임 시작 시 확정된 개수로 재생성함 (여기선 임시 구조만)
-            teams.push({ 
-                id: teams.length, 
-                name: c.name, 
-                color: c.code, 
-                tokens: [],
-                remainingUndos: 2,
-                isAi: false 
-            });
-        }
-
-        function addTeam() {
-            if (gameMode === 'ai') {
-                alert("AI 모드에서는 팀을 추가할 수 없습니다.");
-                return;
-            }
-            SoundEffect.playClick();
-            if (teams.length >= 4) { alert("최대 4팀까지만 가능합니다."); return; }
-            addTeamData(teams.length);
-            renderTeamSetup();
-        }
-
-        function removeTeam(idx) {
-            SoundEffect.playClick();
-            teams.splice(idx, 1);
-            teams.forEach((t, i) => { t.id = i; t.name = TEAM_COLORS[i].name; t.color = TEAM_COLORS[i].code; });
-            renderTeamSetup();
-        }
-
+        const modeSelect = document.getElementById('modeSelect');
         modeSelect.addEventListener('change', () => {
             gameMode = modeSelect.value;
-            addTeamBtn.disabled = (gameMode === 'ai');
-            aiDifficultyArea.style.display = (gameMode === 'ai') ? 'block' : 'none';
-            if (gameMode === 'ai' && teams.length > 2) {
-                teams = teams.slice(0, 2);
-                renderTeamSetup();
-            }
+            document.getElementById('btnAddTeam').disabled = (gameMode === 'ai');
+            document.getElementById('aiDifficultyArea').style.display = (gameMode === 'ai') ? 'block' : 'none';
+            if (gameMode === 'ai' && teams.length > 2) { teams = teams.slice(0, 2); renderTeamSetup(); }
         });
 
         function initGame() {
-            SoundEffect.init(); // 오디오 컨텍스트 시작
-            SoundEffect.playClick();
-
-            const maxVal = parseInt(undoCountInput.value) || 2;
-            tokensPerTeam = parseInt(tokenCountInput.value) || 2;
-            
-            gameState.maxUndos = maxVal;
-            isPowerUpMode = powerUpModeToggle.checked;
-            const aiMode = modeSelect.value === 'ai';
-            gameMode = modeSelect.value;
-            aiDifficulty = aiDifficultySelect.value;
-            gameState.isSinglePlayer = aiMode;
-            
-            if (aiMode) {
+            SoundEffect.init(); SoundEffect.playClick();
+            const maxVal = parseInt(document.getElementById('undoCountInput').value) || 2;
+            tokensPerTeam = parseInt(document.getElementById('tokenCountInput').value) || 2;
+            gameState.maxUndos = maxVal; isPowerUpMode = document.getElementById('powerUpMode').checked;
+            gameMode = modeSelect.value; aiDifficulty = document.getElementById('aiDifficulty').value;
+            if (gameMode === 'ai') {
                 if (teams.length > 2) teams = teams.slice(0, 2);
-                while (teams.length < 2) addTeamData(teams.length);
-                
-                const aiNames = {
-                    'easy': '꼬마 도야',
-                    'normal': '영리한 돗개',
-                    'hard': '전설의 윷신'
-                };
-                
-                teams[0].isAi = false;
-                teams[0].name = TEAM_COLORS[0].name;
-                teams[0].color = TEAM_COLORS[0].code;
-                teams[1].isAi = true;
-                teams[1].name = aiNames[aiDifficulty] || 'AI';
-                teams[1].color = TEAM_COLORS[1].code;
-                renderTeamSetup();
-            } else {
-                teams.forEach((t, i) => {
-                    t.isAi = false;
-                    t.name = TEAM_COLORS[i % TEAM_COLORS.length].name;
-                    t.color = TEAM_COLORS[i % TEAM_COLORS.length].code;
-                });
-            }
-            
-            // 팀별 설정 적용
-            teams.forEach(t => {
-                t.remainingUndos = maxVal;
-                t.sp = 3; // 기본 SP 지급
-                // 말 개수에 맞춰 토큰 재생성
-                t.tokens = [];
-                for(let i=0; i<tokensPerTeam; i++) {
-                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, shielded: false });
-                }
-            });
-
-            setupArea.style.display = 'none';
-            gameWrapper.style.display = 'flex';
-            
-            if (isPowerUpMode) {
-                skillArea.style.display = 'flex';
-                spDisplay.style.display = 'inline';
-            } else {
-                skillArea.style.display = 'none';
-                spDisplay.style.display = 'none';
-            }
-            gameState.step = 'THROW';
-            gameState.currentTeamIdx = 0;
-            gameState.moveQueue = [];
-            historyState = null;
-            btnUndo.style.display = 'none';
-            
-            gameInfo.innerText = `말 ${tokensPerTeam}개 / ${teams.length}팀${gameMode === 'ai' ? ' · AI 모드' : ''}`;
-
-            drawBoardDots();
-            updateBoardVisuals();
-            updateTurnUI();
+                const aiNames = { 'easy': '꼬마 도야', 'normal': '영리한 돗개', 'hard': '전설의 윷신' };
+                teams[0].isAi = false; teams[1].isAi = true; teams[1].name = aiNames[aiDifficulty] || 'AI';
+            } else { teams.forEach((t, i) => { t.isAi = false; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); }
+            teams.forEach(t => { t.remainingUndos = maxVal; t.sp = 3; t.tokens = []; for(let i=0; i<tokensPerTeam; i++) t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, shielded: false }); });
+            document.getElementById('setupArea').style.display = 'none'; document.getElementById('gameWrapper').style.display = 'flex';
+            if (isPowerUpMode) { document.getElementById('skillArea').style.display = 'flex'; document.getElementById('spDisplay').style.display = 'inline'; }
+            gameState.step = 'THROW'; gameState.currentTeamIdx = 0; gameState.moveQueue = [];
+            GameStats.resetSession(); drawBoardDots(); updateBoardVisuals(); updateTurnUI();
         }
 
-        function showRules() {
-            SoundEffect.playClick();
-            ruleModal.style.display = 'flex';
-        }
-        function closeRules() {
-            SoundEffect.playClick();
-            ruleModal.style.display = 'none';
-        }
-
-        // --- 3. 게임 로직 (윷 던지기) ---
-        let isCharging = false;
-        let power = 0;
-        let direction = 1;
-        let animId = null;
-
-        // AI 스킬 사용 판단 로직
-        function aiTryUseSkill() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!currentTeam || !currentTeam.isAi || !isPowerUpMode || currentTeam.sp <= 0) return false;
-
-            // 1. 부스트 (2 SP) - 잡기, 완주, 또는 초반 빠른 진출을 위해 사용
-            if (currentTeam.sp >= 2) {
-                for (let i = 0; i < currentTeam.tokens.length; i++) {
-                    const t = currentTeam.tokens[i];
-                    if (!t.finished) {
-                        const preview = simulateMove(t, 2);
-                        // 잡기/완주가 가능하거나, 혹은 30% 확률로 초반 기선제압용 부스트
-                        if (preview.catch || preview.finished || (t.index === 0 && Math.random() < 0.3)) {
-                            setTimeout(() => executeSkill('boost', i), 600);
-                            return true; 
-                        }
-                    }
-                }
-            }
-
-            // 2. 방어막 (1 SP) - 내 말이 잡힐 위험이 클 때 사용
-            if (currentTeam.sp >= 1) {
-                const targetIdx = currentTeam.tokens.findIndex(t => 
-                    t.index > 0 && !t.finished && !t.shielded && enemyCaptureThreat({ loc: t.location, finalIdx: t.index }) > 100
-                );
-                if (targetIdx !== -1) {
-                    setTimeout(() => executeSkill('shield', targetIdx), 600);
-                    return true;
-                }
-            }
-
-            // 3. 재도전 (1 SP) - 패가 도/개/백도 뿐이고 SP가 여유 있을 때
-            if (currentTeam.sp >= 2 && gameState.step === 'MOVE' && gameState.moveQueue.length > 0) {
-                const hasOnlyBadMoves = gameState.moveQueue.every(m => m.score <= 2);
-                if (hasOnlyBadMoves) {
-                    setTimeout(() => executeSkill('reroll'), 600);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        function toggleThrow() {
-            btnUndo.style.display = 'none';
-            historyState = null;
-
-            if (!isCharging) startGauge();
-            else stopGauge();
-        }
-
+        let isCharging = false, power = 0, direction = 1, animId = null;
+        function toggleThrow() { if (!isCharging) startGauge(); else stopGauge(); }
         function startGauge() {
-            SoundEffect.playStartGauge();
-            isCharging = true;
-            actionBtn.innerText = "멈추기 (STOP)";
-            actionBtn.style.backgroundColor = "#d32f2f";
-            mainResult.innerText = "힘 조절 중...";
-            subResult.innerText = "타이밍을 맞춰 누르세요!";
-            for(let s of sticks) s.classList.add('animate-throw');
-            loopGauge();
+            SoundEffect.playStartGauge(); isCharging = true;
+            document.getElementById('actionBtn').innerText = "멈추기 (STOP)"; document.getElementById('actionBtn').style.backgroundColor = "#ff3b30";
+            document.getElementById('mainResult').innerText = "힘 조절 중..."; loopGauge();
         }
-
         function loopGauge() {
-            if (!isCharging) return;
-            power += direction * 2;
-            if (power >= 100) { power=100; direction=-1; }
-            else if (power <= 0) { power=0; direction=1; }
-            powerBar.style.width = power + "%";
-            if (power <= 10 || power >= 90) powerBar.style.background = '#ff5252';
-            else powerBar.style.background = '#4caf50';
+            if (!isCharging) return; power += direction * 2.5;
+            if (power >= 100) { power=100; direction=-1; } else if (power <= 0) { power=0; direction=1; }
+            document.getElementById('powerBar').style.width = power + "%";
+            document.getElementById('powerBar').style.background = (power <= 10 || power >= 90) ? '#ff3b30' : '#34c759';
             animId = requestAnimationFrame(loopGauge);
         }
-
-        function stopGauge() {
-            isCharging = false;
-            cancelAnimationFrame(animId);
-            for(let s of sticks) s.classList.remove('animate-throw');
-            actionBtn.disabled = true;
-            handleThrowResult(power);
-        }
-
-        function handleThrowResult(finalPower) {
-            power = finalPower;
-            powerBar.style.width = finalPower + "%";
-            powerBar.style.background = (finalPower <= 10 || finalPower >= 90) ? '#ff5252' : '#4caf50';
-
-            if (finalPower <= 10) {
-                SoundEffect.playFail();
-                handleFail("❌ 힘 부족 (실격)", "너무 약했습니다.");
-            }
-            else if (finalPower >= 90) {
-                SoundEffect.playFail();
-                handleFail("⚠️ 낙장!", "힘이 너무 셌습니다.");
-            }
-            else {
-                calculateYutResult();
-            }
-        }
-
-        function performAiThrow() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!currentTeam || !currentTeam.isAi) return;
-            aiTimeoutId = null;
-            mainResult.innerText = "AI가 던지고 있습니다...";
-            subResult.innerText = "AI가 힘을 조절 중이에요.";
-            const aiPower = Math.floor(Math.random() * 60) + 20;
-            setTimeout(() => {
-                handleThrowResult(aiPower);
-            }, 700);
-        }
-
-        function getStepsToFinish(token) {
-            if (token.finished) return 0;
-            let steps = 0;
-            let sim = { index: token.index, location: token.location, finished: token.finished };
-            // 최대 30칸까지만 시뮬레이션 (무한루프 방지)
-            while (!sim.finished && steps < 30) {
-                sim = simulateMove(sim, 1);
-                steps++;
-            }
-            return steps;
-        }
-
-        function enemyCaptureThreat(snapshot) {
-            let threat = 0;
-            teams.forEach((team, tIdx) => {
-                if (tIdx === gameState.currentTeamIdx) return;
-                team.tokens.forEach(enemy => {
-                    if (enemy.finished || enemy.index === 0) return;
-                    // 상대방이 1~5칸 이동해서 나를 잡을 확률 계산
-                    [1,2,3,4,5].forEach(steps => {
-                        const enemyPreview = simulateMove(enemy, steps);
-                        if (enemyPreview.invalidMove) return;
-                        if (enemyPreview.loc === snapshot.loc && enemyPreview.finalIdx === snapshot.finalIdx) {
-                            // 잡힐 위험이 있으면 큰 감점 (가까울수록 위험)
-                            threat += 300 - (steps * 20);
-                        }
-                    });
-                });
-            });
-            return Math.min(Math.max(threat, 0), 500);
-        }
-
-        function evaluateAiMove(token, moveObj) {
-            const preview = simulateMove(token, moveObj.score);
-            if (preview.invalidMove) return { value: -Infinity, preview };
-
-            const currentDist = getStepsToFinish(token);
-            const nextDist = getStepsToFinish({
-                index: preview.finalIdx,
-                location: preview.loc,
-                finished: preview.finished
-            });
-
-            // 난이도별 가중치 설정
-            const weights = {
-                'easy': { dist: 20, capture: 200, finish: 500, shortcut: 50, threat: 0.1, stacking: 20 },
-                'normal': { dist: 40, capture: 800, finish: 1000, shortcut: 250, threat: 0.6, stacking: 120 },
-                'hard': { dist: 60, capture: 1500, finish: 2000, shortcut: 500, threat: 1.2, stacking: 200 }
-            };
-            const w = weights[aiDifficulty] || weights['normal'];
-
-            // 1. 전진 거리 점수
-            let value = (currentDist - nextDist) * w.dist;
-
-            // 2. 잡기 보너스
-            if (preview.catch) value += w.capture;
-
-            // 3. 완주 보너스
-            if (preview.finished) value += w.finish;
-
-            // 4. 지름길 진입 보너스
-            if (token.location === 'outer' && preview.loc.startsWith('shortcut')) {
-                value += w.shortcut;
-            }
-            // 5. 중앙(23번) 지름길 교차점 진입 보너스
-            if (token.location === 'shortcut_1' && preview.loc === 'shortcut_2') {
-                value += w.shortcut * 0.6;
-            }
-
-            // 6. 업기 전략
-            const currentTeam = teams[gameState.currentTeamIdx];
-            const isStacking = currentTeam.tokens.some(t => 
-                !t.finished && t !== token && t.index === preview.finalIdx && t.location === preview.loc
-            );
-            if (isStacking && preview.finalIdx !== 0) value += w.stacking;
-
-            // 7. 위험도 감점
-            if (!preview.finished) {
-                value -= enemyCaptureThreat(preview) * w.threat;
-            }
-
-            // 8. 패 가중치
-            if (moveObj.score >= 4) value += 100;
-
-            // 난이도가 'easy'일 경우 약간의 랜덤성 부여 (실수 유도)
-            if (aiDifficulty === 'easy') {
-                value += (Math.random() - 0.5) * 150;
-            }
-
-            return { value, preview };
-        }
-
-        function aiExecuteCurrentMove() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!currentTeam || !currentTeam.isAi) return;
-            
-            if (gameState.moveQueue.length === 0) return;
-
-            let bestChoice = { tokenIdx: -1, moveId: -1, value: -Infinity };
-
-            // 현재 가용한 모든 패와 모든 말을 조합하여 최적의 수 찾기
-            for (const move of gameState.moveQueue) {
-                currentTeam.tokens.forEach((token, idx) => {
-                    if (token.finished) return;
-
-                    const evaluation = evaluateAiMove(token, move);
-                    let finalValue = evaluation.value;
-
-                    // 이미 필드에 나가 있는 말을 우선적으로 움직이는 성향 (인간적 플레이)
-                    if (token.index === 0 && !evaluation.preview.catch && !evaluation.preview.finished) {
-                        finalValue -= 50; 
-                    }
-
-                    if (finalValue > bestChoice.value) {
-                        bestChoice = { tokenIdx: idx, moveId: move.id, value: finalValue };
-                    }
-                });
-            }
-
-            if (bestChoice.tokenIdx === -1) {
-                // 움직일 수 있는 말이 전혀 없는 경우 (이론상 발생하기 어려움)
-                executeMove(-1, gameState.moveQueue[0].id);
-            } else {
-                executeMove(bestChoice.tokenIdx, bestChoice.moveId);
-            }
-        }
-
-        function maybeTriggerAi() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!currentTeam || !currentTeam.isAi) return;
-            if (aiTimeoutId) {
-                clearTimeout(aiTimeoutId);
-                aiTimeoutId = null;
-            }
-
-            // AI 스킬 사용 시도
-            if (aiTryUseSkill()) return;
-
-            if (gameState.step === 'THROW') {
-                gaugeArea.style.display = 'none';
-                aiTimeoutId = setTimeout(performAiThrow, aiActionDelay);
-            } else if (gameState.step === 'MOVE' && gameState.moveQueue.length > 0) {
-                aiTimeoutId = setTimeout(() => {
-                    aiExecuteCurrentMove();
-                }, aiActionDelay);
-            }
-        }
-
-        function handleFail(title, desc) {
-            mainResult.innerText = title;
-            mainResult.style.color = "red";
-            subResult.innerText = desc;
-            setTimeout(() => { nextTurn(); }, 1500);
-        }
+        function stopGauge() { isCharging = false; cancelAnimationFrame(animId); document.getElementById('actionBtn').disabled = true; handleThrowResult(power); }
+        function handleThrowResult(p) { if (p <= 10) handleFail("❌ 힘 부족", "너무 약했습니다."); else if (p >= 90) handleFail("⚠️ 낙장!", "너무 강했습니다."); else calculateYutResult(); }
+        function handleFail(t, d) { SoundEffect.playFail(); document.getElementById('mainResult').innerText = t; document.getElementById('mainResult').style.color = "#ff3b30"; document.getElementById('subResult').innerText = d; setTimeout(nextTurn, 1500); }
 
         function calculateYutResult() {
-            let flatCount = 0;
-            let results = [];
-            
-            // 0: 둥근면(X/뒷면), 1: 평평한면(O/앞면)
-            for(let i=0; i<4; i++) {
-                let isFlat = Math.random() < 0.55; // 55% 확률로 평평
-                results.push(isFlat);
-                if(isFlat) flatCount++;
-            }
-            
+            let flatCount = 0, results = [];
+            for(let i=0; i<4; i++) { let isFlat = Math.random() < 0.52; results.push(isFlat); if(isFlat) flatCount++; }
             updateSticks(results);
-
-            let score = 0;
-            let text = "";
-            let isBackDo = false;
-
+            let score = 0, text = "", isBackDo = false;
             switch(flatCount) {
-                case 1: 
-                    // 도: 1개만 평평함.
-                    // 만약 평평한 것이 4번째(인덱스 3) 윷이라면 '백도'
-                    if (results[3] === true) {
-                        text = "백도";
-                        score = -1;
-                        isBackDo = true;
-                    } else {
-                        text = "도";
-                        score = 1;
-                    }
-                    break;
+                case 1: if (results[3]) { text = "백도"; score = -1; isBackDo = true; } else { text = "도"; score = 1; } break;
                 case 2: text="개"; score=2; break;
                 case 3: text="걸"; score=3; break;
                 case 4: text="윷"; score=4; break;
                 case 0: text="모"; score=5; break;
             }
-
-            if (isBackDo) {
-                mainResult.innerText = `🔙 ${text} !`;
-                mainResult.style.color = "red";
-            } else {
-                mainResult.innerText = `🎉 ${text} !`;
-                mainResult.style.color = "#2e7d32";
-            }
-            
-            gameState.moveQueue.push({ id: Date.now(), score: score, text: text });
-
-            // 소리 재생
-            if (score >= 4) SoundEffect.playGoodThrow(); // 윷,모
-            else SoundEffect.playYutThrow(); // 도,개,걸,백도
-
-            if (score >= 4) {
-                subResult.innerText = "윷/모! 한 번 더 던지세요.";
-                setTimeout(() => {
-                    actionBtn.disabled = false;
-                    actionBtn.innerText = "던지기 (한번 더!)";
-                    updateAvailableMovesUI();
-                    if (teams[gameState.currentTeamIdx]?.isAi) {
-                        setTimeout(maybeTriggerAi, 300);
+            document.getElementById('mainResult').innerText = `${isBackDo ? '🔙' : '🎉'} ${text}!`;
+            document.getElementById('mainResult').style.color = isBackDo ? "#ff3b30" : "#34c759";
+            gameState.moveQueue.push({ id: Date.now(), score, text });
+            if (!teams[gameState.currentTeamIdx].isAi && (score >= 4)) GameStats.currentSession.yutMoCount++;
+            if (score >= 4) SoundEffect.playGoodThrow(); else SoundEffect.playYutThrow();
+            if (score >= 4) { 
+                document.getElementById('subResult').innerText = "윷/모! 한 번 더!"; 
+                setTimeout(() => { 
+                    if (!teams[gameState.currentTeamIdx].isAi) {
+                        document.getElementById('actionBtn').disabled = false; 
+                        document.getElementById('actionBtn').innerText = "던지기 (한번 더!)"; 
                     }
-                }, 1000);
-            } else {
-                subResult.innerText = "이동할 말을 선택하세요.";
-                setTimeout(() => {
-                    prepareMoveStep();
-                }, 800);
+                    updateAvailableMovesUI(); 
+                    maybeTriggerAi(); 
+                }, 1000); 
             }
+            else { document.getElementById('subResult').innerText = "말을 선택하세요."; setTimeout(prepareMoveStep, 800); }
         }
 
-        function updateSticks(results) {
-            for(let i=0; i<4; i++) {
-                sticks[i].className = 'stick';
-                // 백도 표시 유지 (4번째 윷)
-                if (i === 3) sticks[i].classList.add('back-do-mark');
-                
-                if(results[i]) sticks[i].classList.add('flat');
-                else sticks[i].classList.add('round');
-            }
-        }
-
-        // --- 4. 게임 로직 (말 이동 선택) ---
-
-        function prepareMoveStep() {
-            gameState.step = 'MOVE';
-            gaugeArea.style.display = 'none';
-            moveArea.style.display = 'block';
-            
-            updateAvailableMovesUI();
-            
-            if (gameState.moveQueue.length > 0 && !gameState.selectedMoveId) {
-                selectMove(gameState.moveQueue[0].id);
-            } else if (gameState.moveQueue.length === 0) {
-                 nextTurn();
-            }
-            maybeTriggerAi();
-        }
-
-        function updateAvailableMovesUI() {
-            availableMoves.innerHTML = "";
-            gameState.moveQueue.forEach((move, idx) => {
-                const chip = document.createElement('div');
-                chip.className = 'move-chip';
-                chip.innerText = move.text;
-                if (move.score === -1) chip.classList.add('back-do');
-                if (move.id === gameState.selectedMoveId) {
-                    chip.classList.add('selected');
-                }
-                chip.onclick = () => {
-                    if (gameState.step === 'MOVE') {
-                        SoundEffect.playClick();
-                        selectMove(move.id);
-                    }
-                };
-                availableMoves.appendChild(chip);
-            });
-        }
-
-        function selectMove(moveId) {
-            gameState.selectedMoveId = moveId;
-            updateAvailableMovesUI(); 
-            renderTokenOptions(); 
-        }
+        function updateSticks(res) { for(let i=0; i<4; i++) { sticks[i].className = 'stick' + (res[i] ? ' flat' : ' round'); if (i === 3) sticks[i].classList.add('back-do-mark'); } }
+        function prepareMoveStep() { gameState.step = 'MOVE'; document.getElementById('gaugeArea').style.display = 'none'; document.getElementById('moveArea').style.display = 'block'; updateAvailableMovesUI(); if (gameState.moveQueue.length > 0 && !gameState.selectedMoveId) selectMove(gameState.moveQueue[0].id); else if (gameState.moveQueue.length === 0) nextTurn(); maybeTriggerAi(); }
+        function updateAvailableMovesUI() { document.getElementById('availableMoves').innerHTML = ""; gameState.moveQueue.forEach(m => { const c = document.createElement('div'); c.className = 'move-chip' + (m.score === -1 ? ' back-do' : '') + (m.id === gameState.selectedMoveId ? ' selected' : ''); c.innerText = m.text; c.onclick = () => { if (gameState.step === 'MOVE') { SoundEffect.playClick(); selectMove(m.id); } }; document.getElementById('availableMoves').appendChild(c); }); }
+        function selectMove(id) { gameState.selectedMoveId = id; updateAvailableMovesUI(); renderTokenOptions(); }
 
         function renderTokenOptions() {
-            moveOptions.innerHTML = "";
-            const currentTeam = teams[gameState.currentTeamIdx];
-            
-            const moveObj = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
-            if (!moveObj) return;
-
-            const score = moveObj.score;
-            let validOptionCount = 0;
-
-            currentTeam.tokens.forEach((token, idx) => {
-                if (token.finished) return;
-
-                const btn = document.createElement('button');
-                btn.className = 'btn-move-token';
-                
-                let locText = token.index === 0 ? "출발점" : `${token.index}번`;
-                if (token.location !== 'outer') locText = "지름길";
-                
-                const preview = simulateMove(token, score);
-                
-                let destText;
-                if (preview.invalidMove) {
-                     destText = "🚫 이동불가";
-                     btn.disabled = true;
-                     btn.style.opacity = "0.6";
-                } else if (preview.finished) {
-                    destText = "🏁 완주!";
-                    validOptionCount++;
-                } else {
-                    destText = `${preview.finalIdx}번으로`;
-                    if (preview.catch) destText += " (잡음!)";
-                    validOptionCount++;
-                }
-
-                btn.innerHTML = `
-                    <div style="width:20px; height:20px; border-radius:50%; background:${currentTeam.color}; border:2px solid rgba(0,0,0,0.1);"></div>
-                    <div style="flex:1;">
-                        <div style="font-weight:bold; font-size:0.85rem;">말 ${idx+1} (${locText})</div>
-                        <div style="font-size:0.75rem; color:#666;">⮕ ${destText}</div>
-                    </div>
-                `;
-                if (!preview.invalidMove) {
-                    btn.onclick = () => executeMove(idx, moveObj.id);
-                }
-                moveOptions.appendChild(btn);
+            document.getElementById('moveOptions').innerHTML = "";
+            const team = teams[gameState.currentTeamIdx]; const move = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
+            if (!move) return; let v = 0;
+            team.tokens.forEach((t, i) => {
+                if (t.finished) return; const pre = simulateMove(t, move.score); const b = document.createElement('button'); b.className = 'btn-move-token';
+                if (pre.invalidMove) { b.disabled = true; b.style.opacity = "0.4"; } else v++;
+                b.innerHTML = `<div style="width:18px; height:18px; border-radius:50%; background:${team.color};"></div><div style="flex:1;"><div style="font-weight:700; font-size:0.85rem;">말 ${i+1} (${t.index === 0 ? "출발" : t.index+"번"})</div><div style="font-size:0.75rem; color:#86868b;">⮕ ${pre.invalidMove ? "불가" : (pre.finished ? "완주!" : pre.finalIdx+"번")}</div></div>`;
+                if (!pre.invalidMove) b.onclick = () => executeMove(i, move.id); document.getElementById('moveOptions').appendChild(b);
             });
-
-            // 선택한 패로 움직일 수 있는 말이 하나도 없는 경우 처리
-            if (validOptionCount === 0) {
-                 subResult.innerText = "이동할 수 없는 패입니다. (소멸)";
-                 setTimeout(() => {
-                     executeMove(-1, moveObj.id); 
-                 }, 1500);
-            }
+            if (v === 0) { document.getElementById('subResult').innerText = "이동불가 패 소멸"; setTimeout(() => executeMove(-1, move.id), 1200); }
         }
 
-        // 이동 시뮬레이션 (백도 포함)
-        function simulateMove(token, steps) {
-            let sim = { 
-                idx: token.index, 
-                loc: token.location, 
-                finished: false, 
-                catch: false, 
-                finalIdx: 0,
-                invalidMove: false
-            };
-
-            // 백도 처리 (steps === -1)
-            if (steps === -1) {
-                if (sim.loc === 'outer') {
-                    if (sim.idx === 0) {
-                        // 출발점에서 백도 -> 이동 불가
-                        sim.invalidMove = true;
-                        return sim;
-                    } else if (sim.idx === 1) {
-                         // 1번에서 백도 -> 20번(도착점)으로 이동
-                         sim.idx = 20;
-                    } else {
-                        sim.idx--;
-                    }
-                } else if (sim.loc === 'shortcut_1') {
-                    if (sim.idx === 21 || sim.idx === 5) { 
-                        sim.idx = 4; 
-                        sim.loc = 'outer'; 
-                    } // 지름길 입구나 코너에서 뒤로가면 외곽 4번
-                    else if (sim.idx === 23) sim.idx = 22; // 중앙에서 뒤로
-                    else sim.idx--;
-                } else if (sim.loc === 'shortcut_2') {
-                    if (sim.idx === 26 || sim.idx === 10) { 
-                        sim.idx = 9; 
-                        sim.loc = 'outer'; 
-                    } // 지름길 입구나 코너에서 뒤로가면 외곽 9번
-                    else if (sim.idx === 23) sim.idx = 27; // 중앙에서 뒤로
-                    else sim.idx--;
+        async function executeMove(tIdx, mId) {
+            historyState = { gameSnapshot: JSON.parse(JSON.stringify({ teams, gameState })), whoMovedIdx: gameState.currentTeamIdx };
+            const mIdx = gameState.moveQueue.findIndex(m => m.id === mId); const score = gameState.moveQueue[mIdx].score;
+            gameState.moveQueue.splice(mIdx, 1); gameState.selectedMoveId = null;
+            let catchFlag = false, team = teams[gameState.currentTeamIdx];
+            if (tIdx !== -1) {
+                const sel = team.tokens[tIdx]; const toMove = sel.index === 0 ? [sel] : team.tokens.filter(t => !t.finished && t.index === sel.index && t.location === sel.location);
+                if (!team.isAi) GameStats.currentSession.maxStacked = Math.max(GameStats.currentSession.maxStacked, toMove.length);
+                const finalState = simulateMove(sel, score);
+                const steps = Math.abs(score), fwd = score > 0;
+                for (let s = 1; s <= steps; s++) {
+                    toMove.forEach(t => { const r = simulateMove(t, fwd ? 1 : -1, true); t.index = r.finalIdx; t.location = r.loc; t.finished = r.finished; });
+                    SoundEffect.playMove(); updateBoardVisuals(); if (s < steps) await new Promise(r => setTimeout(r, 250));
                 }
-            } else {
-                // 일반 이동
-                for(let i=0; i<steps; i++) {
-                    if (sim.loc === 'outer') {
-                        sim.idx++;
-                        if (sim.idx > 20) { sim.finished = true; break; }
-                    } 
-                    else if (sim.loc === 'shortcut_1') {
-                        if (sim.idx === 5) sim.idx = 21;
-                        else if (sim.idx === 25) { sim.idx = 15; sim.loc = 'outer'; }
-                        else sim.idx++;
-                    }
-                    else if (sim.loc === 'shortcut_2') {
-                        if (sim.idx === 10) sim.idx = 26;
-                        else if (sim.idx === 27) sim.idx = 23; 
-                        else if (sim.idx === 23) sim.idx = 28;
-                        else if (sim.idx === 29) { sim.idx = 20; sim.loc = 'outer'; }
-                        else sim.idx++;
-                    }
-                }
-            }
-            
-            // 도착지에서 지름길 판정
-            if (!sim.finished && !sim.invalidMove) {
-                 if (sim.loc === 'outer') {
-                    if (sim.idx === 5) {
-                        sim.loc = 'shortcut_1';
-                    } else if (sim.idx === 10) {
-                        sim.loc = 'shortcut_2';
-                    }
-                } else if (sim.loc === 'shortcut_1' && sim.idx === 23) {
-                    sim.loc = 'shortcut_2';
-                }
-            }
-            sim.finalIdx = sim.idx;
-
-            // 잡기 여부 체크
-            if(!sim.finished && !sim.invalidMove) {
-                teams.forEach((t, tIdx) => {
-                    if (tIdx === gameState.currentTeamIdx) return;
-                    t.tokens.forEach(enemy => {
-                        // 상대 말이 완주하지 않았고, 시작점이 아니고, 위치가 같으면
-                        if (!enemy.finished && enemy.index !== 0 && 
-                            enemy.index === sim.finalIdx && enemy.location === sim.loc) {
-                            sim.catch = true;
+                toMove.forEach(t => { t.index = finalState.finalIdx; t.location = finalState.loc; t.finished = finalState.finished; });
+                let actualCatch = false;
+                teams.forEach((tm, ti) => {
+                    if (ti === gameState.currentTeamIdx) return;
+                    tm.tokens.forEach(e => {
+                        if (!e.finished && e.index !== 0 && e.index === finalState.finalIdx && e.location === finalState.loc) {
+                            if (e.shielded) { e.shielded = false; showMessage("🛡️ 방어막 보호!", "#34c759"); if(!tm.isAi) GameStats.unlockAchievement('SHIELD_SUCCESS'); }
+                            else { e.index = 0; e.location = 'outer'; catchFlag = true; actualCatch = true; if (isPowerUpMode) team.sp = Math.min(5, team.sp + 1); if(!team.isAi) GameStats.currentSession.captures++; }
                         }
                     });
                 });
+                if (actualCatch) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 잡았다! 한 번 더!", "#ff3b30"); }
+                if (toMove.some(t => t.finished)) { SoundEffect.playGoodThrow(); showMessage("🏁 완주 성공!", "#0071e3"); }
             }
+            updateBoardVisuals(); if (checkWin()) return;
+            if (team.remainingUndos > 0) { document.getElementById('btnUndo').innerText = `↩ 물리기 (${team.remainingUndos}회)`; document.getElementById('btnUndo').style.display = 'block'; }
+            if (catchFlag) { setTimeout(() => { gameState.step = 'THROW'; updateTurnUI(); }, 1000); return; }
+            if (gameState.moveQueue.length > 0) prepareMoveStep(); else setTimeout(nextTurn, 1000);
+        }
+
+        function simulateMove(token, steps, isAnim = false) {
+            let sim = { idx: token.index, loc: token.location, finished: false, catch: false, finalIdx: 0, invalidMove: false };
+            if (steps === -1) {
+                if (sim.idx === 0) { sim.invalidMove = true; return sim; }
+                if (sim.loc === 'outer') { if (sim.idx === 1) sim.idx = 20; else sim.idx--; }
+                else if (sim.loc === 'shortcut_1') { if (sim.idx === 21 || sim.idx === 5) { sim.idx = 4; sim.loc = 'outer'; } else if (sim.idx === 23) sim.idx = 22; else sim.idx--; }
+                else if (sim.loc === 'shortcut_2') { if (sim.idx === 26 || sim.idx === 10) { sim.idx = 9; sim.loc = 'outer'; } else if (sim.idx === 23) sim.idx = 27; else sim.idx--; }
+            } else {
+                for(let i=0; i<Math.abs(steps); i++) {
+                    if (sim.loc === 'outer') { sim.idx++; if (sim.idx > 20) { sim.finished = true; break; } }
+                    else if (sim.loc === 'shortcut_1') { if (sim.idx === 5) sim.idx = 21; else if (sim.idx === 25) { sim.idx = 15; sim.loc = 'outer'; } else sim.idx++; }
+                    else if (sim.loc === 'shortcut_2') { if (sim.idx === 10) sim.idx = 26; else if (sim.idx === 27) sim.idx = 23; else if (sim.idx === 23) sim.idx = 28; else if (sim.idx === 29) { sim.idx = 20; sim.loc = 'outer'; } else sim.idx++; }
+                }
+            }
+            if (!sim.finished && !sim.invalidMove && !isAnim) {
+                if (sim.loc === 'outer') { if (sim.idx === 5) sim.loc = 'shortcut_1'; else if (sim.idx === 10) sim.loc = 'shortcut_2'; }
+                else if (sim.loc === 'shortcut_1' && sim.idx === 23) sim.loc = 'shortcut_2';
+            }
+            sim.finalIdx = sim.idx;
+            if(!sim.finished && !sim.invalidMove) { teams.forEach((tm, ti) => { if (ti === gameState.currentTeamIdx) return; tm.tokens.forEach(e => { if (!e.finished && e.index !== 0 && e.index === sim.finalIdx && e.location === sim.loc) sim.catch = true; }); }); }
             return sim;
         }
 
-        // --- 5. 이동 실행 및 물리기 로직 ---
-
-        function cloneGame() {
-            return JSON.parse(JSON.stringify({
-                teams: teams,
-                gameState: gameState
-            }));
+        function updateBoardVisuals() {
+            tokenLayer.innerHTML = ""; let occ = {};
+            teams.forEach(team => {
+                team.tokens.forEach(t => {
+                    if (t.finished) return; if (t.index === 0) { drawToken(t, team.color, 360+(team.id*10), 360-(t.id*10)); return; }
+                    const k = `${t.location}_${t.index}`; if (!occ[k]) occ[k] = 0; const off = occ[k]*5; occ[k]++;
+                    const pos = getCoords(t.index, t.location); drawToken(t, team.color, pos.x+off, pos.y-off);
+                });
+            });
         }
 
-        function restoreGame(snapshot) {
-            teams = snapshot.teams;
-            gameState = snapshot.gameState;
-        }
-
-        function executeMove(tokenIdx, moveId) {
-            historyState = {
-                gameSnapshot: cloneGame(),
-                whoMovedIdx: gameState.currentTeamIdx
-            };
-
-            const moveIndex = gameState.moveQueue.findIndex(m => m.id === moveId);
-            const score = gameState.moveQueue[moveIndex].score;
-            gameState.moveQueue.splice(moveIndex, 1);
-            gameState.selectedMoveId = null;
-
-            let caughtSomething = false;
-            let currentTeam = teams[gameState.currentTeamIdx];
-
-            if (tokenIdx !== -1) {
-                SoundEffect.playMove(); // 이동 소리
-                const selectedToken = currentTeam.tokens[tokenIdx];
-                
-                // 같은 위치에 있는 같은 팀의 말들 찾기 (출발점 제외)
-                const tokensToMove = [];
-                if (selectedToken.index === 0) {
-                    tokensToMove.push(selectedToken);
-                } else {
-                    currentTeam.tokens.forEach((token) => {
-                        if (!token.finished && 
-                            token.index === selectedToken.index && 
-                            token.location === selectedToken.location) {
-                            tokensToMove.push(token);
+        async function useSkill(type) {
+            const team = teams[gameState.currentTeamIdx]; if (!isPowerUpMode) return;
+            if (type === 'shield') {
+                const target = team.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
+                if (!target) return team.isAi ? null : alert("판 위에 말이 없습니다.");
+                team.sp -= 1; target.shielded = true; showMessage(`${team.name}: 🛡️ 방어막!`, "#34c759");
+            } else if (type === 'reroll') {
+                if (gameState.step !== 'MOVE' || team.sp < 1) return;
+                team.sp -= 1; gameState.moveQueue = []; gameState.step = 'THROW'; showMessage(`${team.name}: 🔄 재도전!`, "#ff9500");
+            } else if (type === 'boost') {
+                const target = team.tokens.find(t => !t.finished);
+                if (!target || team.sp < 2) return team.isAi ? null : alert("불가");
+                team.sp -= 2; const finalSim = simulateMove(target, 2);
+                const toMove = target.index === 0 ? [target] : team.tokens.filter(t => !t.finished && t.index === target.index && t.location === target.location);
+                for (let s = 1; s <= 2; s++) { toMove.forEach(t => { const r = simulateMove(t, 1, true); t.index = r.finalIdx; t.location = r.loc; t.finished = r.finished; }); SoundEffect.playMove(); updateBoardVisuals(); await new Promise(r => setTimeout(r, 250)); }
+                toMove.forEach(t => { t.index = finalSim.finalIdx; t.location = finalSim.loc; t.finished = finalSim.finished; });
+                let c = false;
+                teams.forEach((tm, ti) => {
+                    if (ti === gameState.currentTeamIdx) return;
+                    tm.tokens.forEach(e => {
+                        if (!e.finished && e.index !== 0 && e.index === finalSim.finalIdx && e.location === finalSim.loc) {
+                            if (e.shielded) { e.shielded = false; showMessage("🛡️ 방어막 보호!", "#34c759"); }
+                            else { e.index = 0; e.location = 'outer'; c = true; team.sp = Math.min(5, team.sp + 1); if(!team.isAi) { GameStats.currentSession.captures++; GameStats.unlockAchievement('BOOST_CATCH'); } }
                         }
                     });
-                }
-                
-                // 모든 말들을 함께 이동
-                let anyFinished = false;
-                const firstTokenResult = simulateMove(selectedToken, score);
-                
-                tokensToMove.forEach(token => {
-                    const result = simulateMove(token, score);
-                    token.index = result.finalIdx;
-                    token.location = result.loc;
-                    token.finished = result.finished;
-                    if (token.finished) anyFinished = true;
                 });
-
-                // 잡기 판정은 한 번만 수행
-                if (firstTokenResult.catch) {
-                    teams.forEach((t, tIdx) => {
-                        if (tIdx === gameState.currentTeamIdx) return;
-                        t.tokens.forEach(enemy => {
-                            if (!enemy.finished && enemy.index !== 0 &&
-                                enemy.index === firstTokenResult.finalIdx && enemy.location === firstTokenResult.loc) {
-                                
-                                if (enemy.shielded) {
-                                    enemy.shielded = false;
-                                    showMessage("🛡️ 방어막이 상대를 보호했습니다!", "#2e7d32");
-                                } else {
-                                    enemy.index = 0;
-                                    enemy.location = 'outer';
-                                    caughtSomething = true;
-                                    if (isPowerUpMode) currentTeam.sp = Math.min(5, currentTeam.sp + 1);
-                                }
-                            }
-                        });
-                    });
-                }
-                
-                if (anyFinished) {
-                    SoundEffect.playGoodThrow();
-                    showMessage("🏁 말이 완주했습니다!", "#1976d2");
-                }
-                
-                if (anyFinished) {
-                    SoundEffect.playGoodThrow();
-                    showMessage("🏁 말이 완주했습니다!", "#1976d2");
-                }
+                if (c) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 부스트 잡기! 한 번 더!", "#ff3b30"); gameState.step = 'THROW'; }
+                else showMessage(`${team.name}: ⚡ 부스트!`, "#0071e3");
             }
-
-            updateBoardVisuals();
-            
-            if (checkWin()) return;
-
-            if (currentTeam.remainingUndos > 0) {
-                btnUndo.innerText = `↩ 물리기 (남은 횟수: ${currentTeam.remainingUndos})`;
-                btnUndo.style.display = 'block';
-                btnUndo.onclick = undoLastMove;
-            } else {
-                btnUndo.style.display = 'none';
-            }
-
-            if (caughtSomething) {
-                SoundEffect.playCatch();
-                showMessage("🎯 잡았다! 한 번 더 던지세요!", "#d32f2f");
-                setTimeout(() => {
-                    gameState.step = 'THROW';
-                    updateTurnUI();
-                }, 1000);
-                return;
-            }
-
-            if (gameState.moveQueue.length > 0) {
-                prepareMoveStep();
-            } else {
-                setTimeout(nextTurn, 1000);
-            }
+            updateTurnUI(); updateBoardVisuals(); checkWin();
         }
-        
-        function checkWin() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            const isAllFinished = currentTeam.tokens.every(token => token.finished);
+
+        function drawToken(t, color, cx, cy) {
+            const team = teams.find(tm => tm.tokens.includes(t)); const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            if (t.shielded) { const s = document.createElementNS("http://www.w3.org/2000/svg", "circle"); s.setAttribute("cx", cx); s.setAttribute("cy", cy); s.setAttribute("r", 16); s.setAttribute("fill", "none"); s.setAttribute("stroke", "#34c759"); s.setAttribute("stroke-width", "3"); s.setAttribute("stroke-dasharray", "4,2"); g.appendChild(s); }
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 12); c.setAttribute("fill", color); c.setAttribute("class", "token"); c.setAttribute("stroke", "white"); c.setAttribute("stroke-width", "2");
+            const emojis = { 'easy':'🐷', 'normal':'🐶', 'hard':'🐉' }, tEmojis = ['🐯', '🐰', '🐸', '🐥'];
+            const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", cx); txt.setAttribute("y", cy); txt.setAttribute("dy", 4); txt.setAttribute("font-size", "14"); txt.setAttribute("text-anchor", "middle"); txt.textContent = team.isAi ? (emojis[aiDifficulty]||'🤖') : tEmojis[team.id%4];
+            const idTxt = document.createElementNS("http://www.w3.org/2000/svg", "text"); idTxt.setAttribute("x", cx+8); idTxt.setAttribute("y", cy-8); idTxt.setAttribute("font-size", "8"); idTxt.setAttribute("font-weight", "bold"); idTxt.setAttribute("fill", "white"); idTxt.setAttribute("stroke", "black"); idTxt.setAttribute("stroke-width", "0.5"); idTxt.textContent = t.id + 1;
+            g.appendChild(c); g.appendChild(txt); g.appendChild(idTxt); tokenLayer.appendChild(g);
+        }
+
+        function maybeTriggerAi() {
+            const team = teams[gameState.currentTeamIdx]; if (!team || !team.isAi) return;
+            if (aiTimeoutId) { clearTimeout(aiTimeoutId); aiTimeoutId = null; }
+            if (aiTryUseSkill()) return;
+            if (gameState.step === 'THROW') aiTimeoutId = setTimeout(aiStartThrowing, aiActionDelay);
+            else if (gameState.step === 'MOVE' && gameState.moveQueue.length > 0) aiTimeoutId = setTimeout(aiExecuteCurrentMove, aiActionDelay);
+        }
+        function aiStartThrowing() {
+            const team = teams[gameState.currentTeamIdx];
+            if (!team || !team.isAi || gameState.step !== 'THROW') return;
             
-            if (isAllFinished) {
-                gameState.step = 'END';
-                showWinModal(currentTeam);
-                return true;
+            document.getElementById('gaugeArea').style.display = 'block';
+            document.getElementById('actionBtn').disabled = true;
+            document.getElementById('actionBtn').innerText = "AI가 조절 중...";
+            startGauge();
+            const targetPower = Math.floor(Math.random() * 60) + 25;
+            const holdTime = (targetPower / 2.5) * (1000 / 60) * 1.1; 
+            aiTimeoutId = setTimeout(() => { 
+                if (gameState.currentTeamIdx === team.id && gameState.step === 'THROW') stopGauge(); 
+            }, holdTime);
+        }
+        function aiTryUseSkill() {
+            const team = teams[gameState.currentTeamIdx]; if (team.sp <= 0 || !isPowerUpMode) return false;
+            if (team.sp >= 2) { 
+                for(let i=0; i<team.tokens.length; i++) { 
+                    const t = team.tokens[i]; if(t.finished) continue; 
+                    const pre = simulateMove(t, 2); 
+                    if(pre.catch || pre.finished || (t.index===0 && Math.random()<0.3)) { 
+                        aiTimeoutId = setTimeout(()=> {
+                            if (gameState.currentTeamIdx === team.id) useSkill('boost');
+                        }, 600); return true; 
+                    } 
+                } 
+            }
+            if (team.sp >= 1) { 
+                const targetIdx = team.tokens.findIndex(t => t.index > 0 && !t.finished && !t.shielded && enemyCaptureThreat({ loc: t.location, finalIdx: t.index }) > 100); 
+                if (targetIdx !== -1) { 
+                    aiTimeoutId = setTimeout(()=> {
+                        if (gameState.currentTeamIdx === team.id) useSkill('shield');
+                    }, 600); return true; 
+                } 
             }
             return false;
         }
-
-        function showWinModal(team) {
-            SoundEffect.playWin(); // 승리 소리
-            winTitle.innerText = `${team.name} 승리!`;
-            winTitle.style.color = team.color;
-            winModal.style.display = 'flex'; // 모달 보이기
-            fireConfetti();
-        }
-
-        // --- 6. 폭죽 효과 ---
-        function fireConfetti() {
-            const canvas = document.getElementById('confettiCanvas');
-            canvas.style.display = 'block';
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            const pieces = [];
-            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
-
-            for(let i=0; i<200; i++) {
-                pieces.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height - canvas.height, 
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    size: Math.random() * 10 + 5,
-                    speedY: Math.random() * 3 + 2,
-                    speedX: Math.random() * 2 - 1,
-                    rotation: Math.random() * 360,
-                    rotationSpeed: Math.random() * 10 - 5
-                });
-            }
-
-            function animate() {
-                if (gameState.step !== 'END') return;
-
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                pieces.forEach(p => {
-                    p.y += p.speedY;
-                    p.x += p.speedX;
-                    p.rotation += p.rotationSpeed;
-
-                    if (p.y > canvas.height) {
-                        p.y = -20;
-                        p.x = Math.random() * canvas.width;
-                    }
-
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate(p.rotation * Math.PI / 180);
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
-                    ctx.restore();
-                });
-                requestAnimationFrame(animate);
-            }
-            animate();
-        }
-
-        function undoLastMove() {
-            if (!historyState) return;
-
-            SoundEffect.playClick();
-            const teamIdx = historyState.whoMovedIdx;
-            const team = teams[teamIdx];
-
-            if (team.remainingUndos <= 0) {
-                alert("물리기 횟수를 모두 사용했습니다.");
-                return;
-            }
-
-            restoreGame(historyState.gameSnapshot);
-            teams[teamIdx].remainingUndos--;
+        function aiExecuteCurrentMove() {
+            const team = teams[gameState.currentTeamIdx]; 
+            if (!team || !team.isAi || gameState.step !== 'MOVE') return;
             
-            historyState = null;
-            btnUndo.style.display = 'none';
-            mainResult.innerText = "물리기 사용!";
-            subResult.innerText = "이전 상태로 돌아왔습니다.";
+            let best = { tIdx: -1, mId: -1, val: -Infinity };
+            for(const m of gameState.moveQueue) { team.tokens.forEach((t, i) => { if(t.finished) return; const res = evaluateAiMove(t, m); if(res.value > best.val) best = { tIdx: i, mId: m.id, val: res.value }; }); }
+            if (best.tIdx !== -1) executeMove(best.tIdx, best.mId);
+        }
+        function evaluateAiMove(token, move) {
+            const pre = simulateMove(token, move.score); if (pre.invalidMove) return { value: -Infinity };
+            const weights = { 'easy': { dist:20, capture:200, finish:500, shortcut:50, threat:0.1, stacking:20 }, 'normal': { dist:40, capture:800, finish:1000, shortcut:250, threat:0.6, stacking:120 }, 'hard': { dist:60, capture:1500, finish:2000, shortcut:500, threat:1.2, stacking:200 } };
+            const w = weights[aiDifficulty] || weights['normal'];
+            let val = (getStepsToFinish(token) - getStepsToFinish({index:pre.finalIdx, location:pre.loc, finished:pre.finished})) * w.dist;
+            if (pre.catch) val += w.capture; if (pre.finished) val += w.finish;
+            if (token.location === 'outer' && pre.loc.startsWith('shortcut')) val += w.shortcut;
+            if (teams[gameState.currentTeamIdx].tokens.some(t => !t.finished && t !== token && t.index === pre.finalIdx && t.location === pre.loc) && pre.finalIdx !== 0) val += w.stacking;
+            if (!pre.finished) val -= enemyCaptureThreat(pre) * w.threat;
+            if (move.score >= 4) val += 100;
+            if (aiDifficulty === 'easy') val += (Math.random()-0.5)*150;
+            return { value: val, preview: pre };
+        }
+        function getStepsToFinish(t) { if (t.finished) return 0; let s = 0, sim = { index: t.index, location: t.location, finished: t.finished }; while (!sim.finished && s < 30) { sim = simulateMove(sim, 1); s++; } return s; }
+        function enemyCaptureThreat(snap) { let th = 0; teams.forEach((tm, ti) => { if(ti===gameState.currentTeamIdx) return; tm.tokens.forEach(e => { if(e.finished||e.index===0)return; [1,2,3,4,5].forEach(st => { const p = simulateMove(e, st); if(!p.invalidMove && p.loc===snap.loc && p.finalIdx===snap.finalIdx) th += 300-(st*20); }); }); }); return Math.min(Math.max(th, 0), 500); }
 
-            updateBoardVisuals();
-            updateTurnUI();
+        function showRules() { SoundEffect.playClick(); document.getElementById('ruleModal').style.display = 'flex'; }
+        function closeRules() { SoundEffect.playClick(); document.getElementById('ruleModal').style.display = 'none'; }
+        function showStats() {
+            SoundEffect.playClick(); const d = GameStats.data;
+            document.getElementById('statTotalGames').innerText = d.totalGames; document.getElementById('statWins').innerText = d.wins;
+            document.getElementById('statWinRate').innerText = `${d.totalGames > 0 ? Math.round((d.wins/d.totalGames)*100) : 0}%`;
+            document.getElementById('statMaxCaptures').innerText = d.maxCaptures;
+            ['FIRST_WIN', 'YUT_GOD', 'CATCH_MASTER', 'STACK_KING', 'BOOST_CATCH', 'SHIELD_SUCCESS'].forEach(id => { const el = document.getElementById(`badge_${id}`); if (d.achievements.includes(id)) el.classList.add('active'); else el.classList.remove('active'); });
+            document.getElementById('statsModal').style.display = 'flex';
+        }
+        function closeStats() { SoundEffect.playClick(); document.getElementById('statsModal').style.display = 'none'; }
+        function shakeBoard() { const b = document.querySelector('.board-section'); b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); }
+        function checkWin() { const team = teams[gameState.currentTeamIdx]; if (team.tokens.every(t => t.finished)) { gameState.step = 'END'; SoundEffect.playWin(); document.getElementById('winTitle').innerText = `${team.name} 승리!`; document.getElementById('winTitle').style.color = team.color; GameStats.recordGameEnd(gameMode==='ai'?!team.isAi:true); document.getElementById('winModal').style.display = 'flex'; fireConfetti(); return true; } return false; }
+        function fireConfetti() { const canvas = document.getElementById('confettiCanvas'); canvas.style.display = 'block'; const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; const pieces = [], colors = ['#0071e3', '#ff3b30', '#34c759', '#ffcc00', '#af52de', '#ff9500']; for(let i=0; i<150; i++) pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height-canvas.height, color: colors[i%colors.length], size: Math.random()*8+4, speedY: Math.random()*3+2, speedX: Math.random()*2-1, rot: Math.random()*360, rotS: Math.random()*10-5 }); function anim() { if (gameState.step !== 'END') return; ctx.clearRect(0,0,canvas.width,canvas.height); pieces.forEach(p => { p.y += p.speedY; p.x += p.speedX; p.rot += p.rotS; if (p.y > canvas.height) { p.y = -20; p.x = Math.random()*canvas.width; } ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle = p.color; ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size); ctx.restore(); }); requestAnimationFrame(anim); } anim(); }
+        function undoLastMove() { if (!historyState) return; SoundEffect.playClick(); const teamIdx = historyState.whoMovedIdx; if (teams[teamIdx].remainingUndos <= 0) return; const snapshot = historyState.gameSnapshot; teams = snapshot.teams; gameState = snapshot.gameState; teams[teamIdx].remainingUndos--; historyState = null; document.getElementById('btnUndo').style.display = 'none'; updateBoardVisuals(); updateTurnUI(); if (gameState.step === 'MOVE') { document.getElementById('gaugeArea').style.display = 'none'; document.getElementById('moveArea').style.display = 'block'; updateAvailableMovesUI(); renderTokenOptions(); } else { document.getElementById('gaugeArea').style.display = 'block'; document.getElementById('moveArea').style.display = 'none'; document.getElementById('actionBtn').disabled = false; document.getElementById('actionBtn').innerText = gameState.moveQueue.length > 0 ? "던지기 (보너스)" : "던지기 (START)"; } }
+        function nextTurn() { 
+            if (aiTimeoutId) { clearTimeout(aiTimeoutId); aiTimeoutId = null; } // 턴이 바뀔 때 대기 중인 모든 AI 동작 취소
+            gameState.currentTeamIdx = (gameState.currentTeamIdx + 1) % teams.length; 
+            gameState.step = 'THROW'; gameState.moveQueue = []; gameState.selectedMoveId = null; 
             
-            if (gameState.step === 'MOVE') {
-                gaugeArea.style.display = 'none';
-                moveArea.style.display = 'block';
-                updateAvailableMovesUI();
-                renderTokenOptions();
-            } else if (gameState.step === 'THROW') {
-                gaugeArea.style.display = 'block';
-                moveArea.style.display = 'none';
-                actionBtn.disabled = false;
-                
-                if (gameState.moveQueue.length > 0) { 
-                    actionBtn.innerText = "던지기 (잡기 보너스)";
-                } else {
-                    actionBtn.innerText = "던지기 (START)";
-                }
-            }
-        }
-
-        function nextTurn() {
-            gameState.currentTeamIdx++;
-            if (gameState.currentTeamIdx >= teams.length) gameState.currentTeamIdx = 0;
+            document.getElementById('availableMoves').innerHTML = ""; 
+            document.getElementById('mainResult').innerText = "준비"; 
+            document.getElementById('mainResult').style.color = "inherit"; 
+            document.getElementById('subResult').innerText = "버튼을 눌러 힘을 조절하세요!"; 
+            for(let i=0; i<4; i++) { sticks[i].className = 'stick round'; if(i===3) sticks[i].classList.add('back-do-mark'); }
             
-            gameState.step = 'THROW';
-            gameState.moveQueue = [];
-            gameState.selectedMoveId = null;
+            updateTurnUI(); 
+        }
+        function showMessage(msg, color) { document.getElementById('mainResult').innerText = msg; document.getElementById('mainResult').style.color = color || "inherit"; document.getElementById('subResult').innerText = ""; }
+        function updateTurnUI() { 
+            const team = teams[gameState.currentTeamIdx]; if (!team) return; 
+            document.getElementById('turnIndicator').innerText = `${team.name}${team.isAi ? ' (AI)' : ''} 차례`; 
+            document.getElementById('turnIndicator').style.backgroundColor = team.color; 
+            document.getElementById('actionBtn').style.backgroundColor = team.color; 
             
-            updateTurnUI();
-            
-            gaugeArea.style.display = 'block';
-            moveArea.style.display = 'none';
-            availableMoves.innerHTML = "";
-            actionBtn.disabled = false;
-            actionBtn.innerText = "던지기 (START)";
-            mainResult.innerText = "준비";
-            subResult.innerText = "버튼을 눌러 힘을 조절하세요!";
-            
-            for(let s of sticks) {
-                s.className = 'stick';
-                if (sticks[3] === s) s.classList.add('back-do-mark');
-                else s.classList.add('round'); 
-            }
-             for(let i=0; i<4; i++) {
-                sticks[i].className = 'stick round';
-                if (i===3) sticks[i].classList.add('back-do-mark');
-             }
-        }
-
-        function showMessage(msg, color) {
-            mainResult.innerText = msg;
-            mainResult.style.color = color || "#333";
-            subResult.innerText = "";
-        }
-
-        function updateTurnUI() {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!currentTeam) return;
-
-            const aiSuffix = currentTeam.isAi ? " (AI)" : "";
-            turnIndicator.innerText = `${currentTeam.name}${aiSuffix} 차례`;
-            turnIndicator.style.backgroundColor = currentTeam.color;
-            actionBtn.style.backgroundColor = currentTeam.color;
-
-            // SP 업데이트 및 스킬 버튼 상태 제어 (모든 팀 공통)
-            if (isPowerUpMode) {
-                spDisplay.textContent = `SP: ${currentTeam.sp || 0}`;
-                spDisplay.style.display = 'inline';
-                skillArea.style.display = 'flex';
-
-                const canUseShield = (currentTeam.sp >= 1) && currentTeam.tokens.some(t => t.index > 0 && !t.finished && !t.shielded);
-                const canUseReroll = (currentTeam.sp >= 1) && (gameState.step === 'MOVE' && gameState.moveQueue.length > 0);
-                const canUseBoost = (currentTeam.sp >= 2) && currentTeam.tokens.some(t => !t.finished); // 출발점에서도 부스트 가능하도록 변경
-                
-                document.getElementById('skillShield').disabled = !canUseShield || currentTeam.isAi;
-                document.getElementById('skillReroll').disabled = !canUseReroll || currentTeam.isAi;
-                document.getElementById('skillBoost').disabled = !canUseBoost || currentTeam.isAi;
-            } else {
-                spDisplay.style.display = 'none';
-                skillArea.style.display = 'none';
-            }
-
-            if (currentTeam.isAi && gameState.step === 'THROW') {
-                actionBtn.disabled = true;
-                actionBtn.innerText = "AI가 던지고 있습니다...";
-                gaugeArea.style.display = 'none';
-            } else if (gameState.step === 'THROW') {
-                gaugeArea.style.display = 'block';
-                actionBtn.disabled = false;
-                if (gameState.moveQueue.length > 0) {
-                    actionBtn.innerText = "던지기 (보너스)";
-                } else {
-                    actionBtn.innerText = "던지기 (START)";
-                }
-            } else {
-                gaugeArea.style.display = 'none';
-            }
-            maybeTriggerAi();
-        }
-
-        // --- 5. 보드 그리기 (기존 동일) ---
-        const outerPath = [
-            {x: 350, y: 350}, // 0
-            {x: 350, y: 290}, {x: 350, y: 230}, {x: 350, y: 170}, {x: 350, y: 110},
-            {x: 350, y: 50},  // 5
-            {x: 290, y: 50}, {x: 230, y: 50}, {x: 170, y: 50}, {x: 110, y: 50},
-            {x: 50, y: 50},   // 10
-            {x: 50, y: 110}, {x: 50, y: 170}, {x: 50, y: 230}, {x: 50, y: 290},
-            {x: 50, y: 350},  // 15
-            {x: 110, y: 350}, {x: 170, y: 350}, {x: 230, y: 350}, {x: 290, y: 350},
-            {x: 350, y: 350}  // 20
-        ];
-
-        function getCoords(idx, loc) {
-            if (loc === 'shortcut_1') {
-                if (idx === 5) return outerPath[5];
-                const map = { 21: {x:300, y:100}, 22: {x:250, y:150}, 23: {x:200, y:200}, 24: {x:150, y:250}, 25: {x:100, y:300} };
-                return map[idx] || outerPath[idx] || {x:350,y:350};
-            }
-            if (loc === 'shortcut_2') {
-                if (idx === 10) return outerPath[10];
-                const map = { 26: {x:100, y:100}, 27: {x:150, y:150}, 23: {x:200, y:200}, 28: {x:250, y:250}, 29: {x:300, y:300} };
-                return map[idx] || outerPath[idx] || {x:350,y:350};
-            }
-            return outerPath[idx] || {x:350, y:350};
-        }
-
-        function drawBoardDots() {
-            boardDots.innerHTML = "";
-            outerPath.forEach((pos, i) => { if (i===20) return; createDot(pos.x, pos.y, i); });
-            createDot(300, 100, 21); createDot(250, 150, 22); createDot(200, 200, 'center');
-            createDot(150, 250, 24); createDot(100, 300, 25);
-            createDot(100, 100, 26); createDot(150, 150, 27); createDot(250, 250, 28); createDot(300, 300, 29);
-        }
-
-        function createDot(cx, cy, id) {
-            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 7);
-            c.setAttribute("class", "board-dot");
-            if(id===0) c.classList.add('start');
-            if(id==='center') c.classList.add('center');
-            if([5,10,15].includes(id)) c.classList.add('corner');
-            boardDots.appendChild(c);
-        }
-
-        function updateBoardVisuals() {
-            tokenLayer.innerHTML = "";
-            let occupied = {};
-            teams.forEach((team) => {
-                team.tokens.forEach((token) => {
-                    if (token.finished) return;
-                    if (token.index === 0) {
-                        drawToken(token, team.color, 360 + (team.id * 10), 360 - (token.id * 10)); 
-                        return;
-                    }
-                    const key = `${token.location}_${token.index}`;
-                    if (!occupied[key]) occupied[key] = 0;
-                    const offset = occupied[key] * 5; 
-                    occupied[key]++;
-                    const pos = getCoords(token.index, token.location);
-                    drawToken(token, team.color, pos.x + offset, pos.y - offset);
-                });
-            });
-        }
-
-        function useSkill(type) {
-            executeSkill(type);
-        }
-
-        function executeSkill(type, targetTokenIdx = -1) {
-            const currentTeam = teams[gameState.currentTeamIdx];
-            if (!isPowerUpMode) return;
-
-            if (type === 'shield') {
-                if (currentTeam.sp < 1) return;
-                let target;
-                if (targetTokenIdx !== -1) {
-                    target = currentTeam.tokens[targetTokenIdx];
-                } else {
-                    target = currentTeam.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
-                }
-                
-                if (!target) return currentTeam.isAi ? null : alert("보호할 수 있는 말이 없습니다 (판 위에 있어야 함)");
-                
-                currentTeam.sp -= 1;
-                target.shielded = true;
-                showMessage(`${currentTeam.name} 팀: 🛡️ 방어막 사용!`, "#2e7d32");
+            if (isPowerUpMode) { 
+                document.getElementById('spDisplay').textContent = `SP: ${team.sp || 0}`; 
+                document.getElementById('spDisplay').style.display = 'inline'; 
+                document.getElementById('skillArea').style.display = 'flex'; 
+                document.getElementById('skillShield').disabled = team.sp < 1 || team.isAi || !team.tokens.some(t => t.index > 0 && !t.finished && !t.shielded); 
+                document.getElementById('skillReroll').disabled = team.sp < 1 || team.isAi || !(gameState.step === 'MOVE' && gameState.moveQueue.length > 0); 
+                document.getElementById('skillBoost').disabled = team.sp < 2 || team.isAi || !team.tokens.some(t => !t.finished); 
+            } else { 
+                document.getElementById('spDisplay').style.display = 'none'; 
+                document.getElementById('skillArea').style.display = 'none'; 
             } 
-            else if (type === 'reroll') {
-                if (gameState.step !== 'MOVE' || gameState.moveQueue.length === 0) return;
-                if (currentTeam.sp < 1) return;
-                
-                currentTeam.sp -= 1;
-                gameState.moveQueue = [];
-                gameState.step = 'THROW';
-                showMessage(`${currentTeam.name} 팀: 🔄 재도전! 다시 던집니다.`, "#d84315");
-            }
-            else if (type === 'boost') {
-                if (currentTeam.sp < 2) return;
-                let target;
-                if (targetTokenIdx !== -1) {
-                    target = currentTeam.tokens[targetTokenIdx];
+            
+            if (gameState.step === 'THROW') {
+                document.getElementById('moveArea').style.display = 'none';
+                document.getElementById('gaugeArea').style.display = 'block'; 
+                if (team.isAi) {
+                    document.getElementById('actionBtn').disabled = true; 
+                    document.getElementById('actionBtn').innerText = "AI 차례 (준비 중...)"; 
                 } else {
-                    target = currentTeam.tokens.find(t => !t.finished);
+                    document.getElementById('actionBtn').disabled = false; 
+                    document.getElementById('actionBtn').innerText = gameState.moveQueue.length > 0 ? "던지기 (보너스)" : "던지기 (START)"; 
                 }
-                
-                if (!target) return currentTeam.isAi ? null : alert("부스트를 사용할 말이 없습니다.");
-                
-                currentTeam.sp -= 2;
-                const preview = simulateMove(target, 2);
-                
-                // 업힌 말들 함께 이동
-                const oldIdx = target.index;
-                const oldLoc = target.location;
-                const tokensToMove = currentTeam.tokens.filter(t => 
-                    !t.finished && t.index === oldIdx && t.location === oldLoc
-                );
-
-                tokensToMove.forEach(t => {
-                    const res = simulateMove(t, 2);
-                    t.index = res.finalIdx;
-                    t.location = res.loc;
-                    t.finished = res.finished;
-                });
-
-                let caughtSomething = false;
-                if (preview.catch) {
-                    teams.forEach((t, tIdx) => {
-                        if (tIdx === gameState.currentTeamIdx) return;
-                        t.tokens.forEach(enemy => {
-                            if (!enemy.finished && enemy.index !== 0 &&
-                                enemy.index === preview.finalIdx && enemy.location === preview.loc) {
-                                if (enemy.shielded) {
-                                    enemy.shielded = false;
-                                    showMessage("🛡️ 방어막이 상대를 보호했습니다!", "#2e7d32");
-                                } else {
-                                    enemy.index = 0;
-                                    enemy.location = 'outer';
-                                    caughtSomething = true;
-                                    currentTeam.sp = Math.min(5, currentTeam.sp + 1);
-                                }
-                            }
-                        });
-                    });
-                }
-
-                if (caughtSomething) {
-                    SoundEffect.playCatch();
-                    showMessage("🎯 ⚡부스트로 잡았습니다! 한 번 더!", "#d32f2f");
-                    gameState.step = 'THROW';
-                } else {
-                    showMessage(`${currentTeam.name} 팀: ⚡ 부스트! 2칸 전진!`, "#0277bd");
-                }
-            }
-
-            updateTurnUI();
-            updateBoardVisuals();
-            checkWin();
+            } else { 
+                document.getElementById('gaugeArea').style.display = 'none'; 
+                document.getElementById('moveArea').style.display = 'block';
+            } 
+            maybeTriggerAi(); 
         }
-
-        function drawToken(token, color, cx, cy) {
-            const currentTeam = teams.find(t => t.tokens.includes(token));
-            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            
-            if (token.shielded) {
-                const shield = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                shield.setAttribute("cx", cx); shield.setAttribute("cy", cy); shield.setAttribute("r", 16);
-                shield.setAttribute("fill", "none");
-                shield.setAttribute("stroke", "#4caf50");
-                shield.setAttribute("stroke-width", "3");
-                shield.setAttribute("stroke-dasharray", "4,2");
-                g.appendChild(shield);
-            }
-
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", cx); circle.setAttribute("cy", cy); circle.setAttribute("r", 12);
-            circle.setAttribute("fill", color); circle.setAttribute("class", "token");
-            circle.setAttribute("stroke", "white"); circle.setAttribute("stroke-width", "2");
-            
-            let emoji = "⚪";
-            if (currentTeam) {
-                if (currentTeam.isAi) {
-                    const aiEmojis = { 'easy': '🐷', 'normal': '🐶', 'hard': '🐉' };
-                    emoji = aiEmojis[aiDifficulty] || '🤖';
-                } else {
-                    const teamEmojis = ['🐯', '🐰', '🐸', '🐥'];
-                    emoji = teamEmojis[currentTeam.id % teamEmojis.length];
-                }
-            }
-
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", cx); text.setAttribute("y", cy); text.setAttribute("dy", 4);
-            text.setAttribute("font-size", "14");
-            text.setAttribute("text-anchor", "middle");
-            text.textContent = emoji;
-            
-            const idText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            idText.setAttribute("x", cx + 8); idText.setAttribute("y", cy - 8);
-            idText.setAttribute("font-size", "8"); idText.setAttribute("font-weight", "bold");
-            idText.setAttribute("fill", "white"); idText.setAttribute("stroke", "black"); idText.setAttribute("stroke-width", "0.5");
-            idText.textContent = token.id + 1;
-
-            g.appendChild(circle); g.appendChild(text); g.appendChild(idText);
-            tokenLayer.appendChild(g);
-        }
-
+        const outerP = [{x:350,y:350},{x:350,y:290},{x:350,y:230},{x:350,y:170},{x:350,y:110},{x:350,y:50},{x:290,y:50},{x:230,y:50},{x:170,y:50},{x:110,y:50},{x:50,y:50},{x:50,y:110},{x:50,y:170},{x:50,y:230},{x:50,y:290},{x:50,y:350},{x:110,y:350},{x:170,y:350},{x:230,y:350},{x:290,y:350},{x:350,y:350}];
+        function getCoords(i, l) { if (l === 'shortcut_1') { if (i === 5) return outerP[5]; const m = { 21:{x:300,y:100}, 22:{x:250,y:150}, 23:{x:200,y:200}, 24:{x:150,y:250}, 25:{x:100,y:300} }; return m[i] || outerP[i]; } if (l === 'shortcut_2') { if (i === 10) return outerP[10]; const m = { 26:{x:100,y:100}, 27:{x:150,y:150}, 23:{x:200,y:200}, 28:{x:250,y:250}, 29:{x:300,y:300} }; return m[i] || outerP[i]; } return outerP[i]; }
+        function drawBoardDots() { document.getElementById('boardDots').innerHTML = ""; outerP.forEach((p, i) => { if (i<20) createDot(p.x, p.y, i); }); createDot(300,100,21); createDot(250,150,22); createDot(200,200,'center'); createDot(150,250,24); createDot(100,300,25); createDot(100,100,26); createDot(150,150,27); createDot(250,250,28); createDot(300,300,29); }
+        function createDot(cx, cy, id) { const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 7); c.setAttribute("class", "board-dot" + (id===0?' start':(id==='center'?' center':([5,10,15].includes(id)?' corner':'')))); document.getElementById('boardDots').appendChild(c); }
+        const sticks = document.getElementById('yutContainer').children;
         initSetup();
-
-        // PWA Service Worker 등록
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then((registration) => {
-                        console.log('Service Worker 등록 성공:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.log('Service Worker 등록 실패:', error);
-                    });
-            });
-        }
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); }); }
     </script>
 </body>
 </html>
