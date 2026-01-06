@@ -232,12 +232,11 @@
         .move-chip.back-do { border-color: #ff3b30; color: #ff3b30; }
         .move-chip.back-do.selected { background: #ff3b30; color: white; border-color: #ff3b30; }
 
-        #moveOptions { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+        #moveOptions { display: flex; flex-direction: row; gap: 6px; margin-top: 4px; width: 100%; justify-content: center; }
         .btn-move-token {
-            background: white; border: 1px solid rgba(0,0,0,0.1); padding: 10px; border-radius: 14px;
-            text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px;
-            transition: all 0.2s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            flex: 1; background: white; border: 1px solid rgba(0,0,0,0.1); padding: 10px 6px; border-radius: 14px;
+            text-align: center; cursor: pointer; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.03); min-width: 0;
         }
         .btn-move-token:active { background: #f2f2f7; transform: scale(0.98); }
 
@@ -296,11 +295,26 @@
         @media (prefers-color-scheme: dark) { .result-text { color: #f5f5f7; } }
         .info-text { color: #86868b; font-size: 0.8rem; margin-bottom: 8px; }
         
-        .input-group { margin: 12px 0; text-align: left; background: rgba(0,0,0,0.03); padding: 16px; border-radius: 18px; }
-        .input-group label { font-weight: 600; display: block; margin-bottom: 8px; color: #3a3a3c; font-size: 0.9rem;}
+        .input-group { margin: 8px 0; text-align: left; background: rgba(0,0,0,0.03); padding: 12px; border-radius: 18px; flex: 1; }
+        .input-row { display: flex; gap: 10px; width: 100%; }
+        .input-group label { font-weight: 600; display: block; margin-bottom: 4px; color: #3a3a3c; font-size: 0.8rem;}
         @media (prefers-color-scheme: dark) { .input-group label { color: #f5f5f7; } }
-        .input-group input,
-        .input-group select { width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; font-size: 1rem; box-sizing: border-box; background: white; }
+        .input-group input:not([type="checkbox"]),
+        .input-group select { 
+            width: 100%; padding: 10px 12px; border: 1px solid rgba(0,0,0,0.1); 
+            border-radius: 12px; font-size: 0.85rem; box-sizing: border-box; 
+            background: white; -webkit-appearance: none; appearance: none;
+        }
+        .input-group select option { font-size: 0.85rem; }
+
+        /* 팀 리스트 가로 배열 */
+        #teamList { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 0; margin: 10px 0; }
+        .team-item { 
+            background: white; padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+        @media (prefers-color-scheme: dark) { .team-item { background: #2c2c2e; border-color: rgba(255,255,255,0.1); } }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -318,6 +332,18 @@
         .modal-desc { font-size: 0.95rem; margin-bottom: 24px; color: #3a3a3c; line-height: 1.6; text-align: left; word-break: keep-all;}
         @media (prefers-color-scheme: dark) { .modal-desc { color: #f5f5f7; } }
         
+        .toast-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            padding: 20px 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 3000; display: none; text-align: center; border: 2px solid var(--accent-color);
+            animation: toastPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes toastPop { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+        .toast-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
+        .toast-msg { font-size: 1rem; color: #3a3a3c; }
+        @media (prefers-color-scheme: dark) { .toast-modal { background: rgba(28, 28, 30, 0.9); border-color: #0071e3; color: white; } .toast-msg { color: #d1d1d6; } }
+
         .rule-list { text-align: left; padding-left: 20px; margin-bottom: 15px; color: inherit; font-size: 0.85rem; }
         .rule-list li { margin-bottom: 8px; }
 
@@ -327,13 +353,13 @@
             display: flex; justify-content: center; gap: 8px; margin-top: 8px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 16px;
         }
         .btn-skill {
-            flex: 1; padding: 8px 4px; border: 1px solid rgba(0,0,0,0.05); border-radius: 14px; background: white; font-size: 0.7rem; font-weight: 600;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            flex: 1; padding: 10px 4px; border: 1px solid rgba(0,0,0,0.05); border-radius: 14px; background: white; font-size: 0.7rem; font-weight: 700;
+            cursor: pointer; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
         .btn-skill:active:not(:disabled) { transform: scale(0.95); background: #f2f2f7; }
         .btn-skill:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-        .skill-icon { font-size: 1.2rem; margin-bottom: 2px; }
-        .skill-cost { font-size: 0.6rem; color: var(--accent-color); font-weight: 700; margin-top: 2px;}
+        .skill-icon { font-size: 1rem; }
+        .skill-cost { font-size: 0.65rem; color: var(--accent-color); font-weight: 800; margin-left: 2px; }
         .sp-display { font-size: 0.85rem; font-weight: 700; color: #ff3b30; margin-left: 8px; }
 
         .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
@@ -356,19 +382,34 @@
         <h1>🥏 모바일 윷놀이</h1>
 
     <div id="setupArea">
-        <h2 style="margin-top:0; font-weight:800; letter-spacing:-0.03em;">게임 설정</h2>
-        <div class="input-group"><label for="tokenCountInput">말 개수 (팀당)</label><input type="number" id="tokenCountInput" value="2" min="1" max="5" inputmode="numeric"></div>
-        <div class="input-group"><label for="undoCountInput">팀별 물리기 횟수</label><input type="number" id="undoCountInput" value="2" min="0" max="10" inputmode="numeric"></div>
-        <div style="margin-bottom: 20px;"><p style="font-weight: 600; color: #86868b; font-size: 0.9rem;">참가할 팀 (기본 2팀)</p><ul id="teamList" style="list-style: none; padding: 0;"></ul><button id="btnAddTeam" class="btn-secondary" style="width:100%; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600;" onclick="addTeam()">+ 팀 추가</button></div>
-        <div class="input-group"><label for="modeSelect">플레이 모드</label><select id="modeSelect"><option value="multi">멀티플레이 (다수 팀)</option><option value="ai">AI와 플레이 (혼자용)</option></select></div>
-        <div class="input-group"><label style="display: flex; align-items: center; cursor: pointer;"><input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">파워업 모드 (특수 스킬)</label></div>
-        <div id="aiDifficultyArea" class="input-group" style="display: none;"><label for="aiDifficulty">AI 캐릭터 (난이도)</label><select id="aiDifficulty"><option value="easy">꼬마 도야 (초보)</option><option value="normal" selected>영리한 돗개 (보통)</option><option value="hard">전설의 윷신 (고수)</option></select></div>
+        <h2 style="margin-top:0; font-weight:800; letter-spacing:-0.03em; font-size: 1.2rem;">게임 설정</h2>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div class="input-group" style="flex: 1; margin: 0; padding: 12px;"><label for="tokenCountInput" style="font-size: 0.8rem;">말 개수</label><input type="number" id="tokenCountInput" value="2" min="1" max="5" inputmode="numeric"></div>
+            <div class="input-group" style="flex: 1; margin: 0; padding: 12px;"><label for="undoCountInput" style="font-size: 0.8rem;">물리기 횟수</label><input type="number" id="undoCountInput" value="2" min="0" max="10" inputmode="numeric"></div>
+        </div>
+
+        <div class="input-group" style="padding: 12px;"><label for="modeSelect" style="font-size: 0.85rem;">플레이 모드</label><select id="modeSelect" style="font-size: 0.85rem;"><option value="multi">멀티플레이 (다수 팀)</option><option value="ai">AI와 플레이 (혼자용)</option></select></div>
+        <div id="aiDifficultyArea" class="input-group" style="display: none; padding: 12px;"><label for="aiDifficulty" style="font-size: 0.85rem;">AI 캐릭터 (난이도)</label><select id="aiDifficulty" style="font-size: 0.85rem;"><option value="easy">꼬마 도야 (초보)</option><option value="normal" selected>영리한 돗개 (보통)</option><option value="hard">전설의 윷신 (고수)</option></select></div>
+
+        <div style="margin-bottom: 15px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
+            <p style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0 0 10px 0;">참가 팀 (최대 4팀)</p>
+            <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px;"></ul>
+            <button id="btnAddTeam" class="btn-secondary" style="width:100%; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0;" onclick="addTeam()">+ 팀 추가</button>
+        </div>
+
+        <div class="input-group" style="padding: 12px;"><label style="display: flex; align-items: center; cursor: pointer; font-size: 0.85rem;"><input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">파워업 모드 (특수 스킬)</label></div>
+        
+        <div style="background: rgba(0,113,227,0.05); padding: 12px; border-radius: 16px; margin-bottom: 15px; border: 1px solid rgba(0,113,227,0.1); cursor: pointer;" onclick="showRules()">
+            <p style="margin: 0; font-size: 0.85rem; color: var(--accent-color); font-weight: 700;">📖 '게임방법'을 먼저 읽어보세요!</p>
+            <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #86868b;">🕸️ 함정과 ✨ 스킬 규칙이 추가되었습니다.</p>
+        </div>
+
         <button class="btn-primary" onclick="initGame()">게임 시작 ▶</button>
         <div style="display:flex; gap:10px; margin-top: 15px;">
-            <button class="btn-info" style="margin-top:0; flex:1; background:#8e8e93;" onclick="showRules()">📖 게임방법</button>
+            <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <button class="btn-sound-toggle" style="width:100%;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -392,15 +433,24 @@
             <div id="gaugeArea"><div class="gauge-wrapper"><div class="zone zone-weak">약함</div><div class="zone zone-safe">성공</div><div class="zone zone-over">낙장</div><div class="power-bar" id="powerBar"></div></div><button class="btn-primary" id="actionBtn" onclick="toggleThrow()">던지기 (START)</button></div>
             <div id="moveArea" style="display: none;">
                 <div style="font-size:0.8rem; font-weight:700; color:#86868b; margin-bottom:6px; text-align:left; padding-left:4px;">패 선택</div><div id="availableMoves" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:10px;"></div>
-                <div style="font-size:0.8rem; font-weight:700; color:#86868b; margin-top:10px; margin-bottom:6px; text-align:left; padding-left:4px;">이동할 말 선택</div><div id="moveOptions"></div>
+                <div id="moveOptions"></div>
             </div>
             <button id="btnUndo" class="btn-undo" onclick="undoLastMove()">↩ 물리기 (2회 남음)</button>
         </div>
     </div>
 
     <div id="winModal" class="modal-overlay"><div class="modal-content"><div class="modal-title" id="winTitle">승리!</div><div class="modal-desc" id="winDesc">모든 말이 완주했습니다!</div><button class="btn-primary" onclick="location.reload()">다시 하기</button></div></div>
-    <div id="ruleModal" class="modal-overlay"><div class="modal-content" style="text-align: left;"><div class="modal-title" style="text-align: center;">📜 게임 방법</div><div class="modal-desc"><ul class="rule-list"><li><strong>던지기:</strong> 파워 게이지의 성공 구간에 맞춰 버튼을 누르세요.</li><li><strong>보너스:</strong> '윷', '모' 또는 상대 말을 잡으면 한 번 더 던집니다.</li><li><strong>업기:</strong> 자기 팀의 말이 같은 칸에 있으면 함께 이동합니다.</li><li><strong>지름길:</strong> 모서리나 중앙 칸에 멈추면 지름길로 진입할 수 있습니다.</li><li style="color: var(--accent-color); font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li><li style="font-size: 0.8rem; margin-bottom: 5px;">* 자신의 차례에 SP를 소모하여 스킬을 사용합니다.</li><li><strong>SP 충전:</strong> 상대 말을 잡을 때마다 1 SP가 충전됩니다 (최대 5).</li><li><strong>🛡️ 방어막 (1 SP):</strong> 상대의 잡기를 1회 방어합니다.</li><li><strong>🔄 재도전 (1 SP):</strong> 패를 취소하고 다시 던집니다.</li><li><strong>⚡ 부스트 (2 SP):</strong> 즉시 2칸 전진하며, 이때 상대를 잡아도 보너스 던지기 기회를 얻습니다.</li></ul></div><button class="btn-secondary" style="width: 100%; background:#8e8e93;" onclick="closeRules()">닫기</button></div></div>
+    <div id="ruleModal" class="modal-overlay"><div class="modal-content" style="text-align: left;"><div class="modal-title" style="text-align: center;">📜 게임 방법</div><div class="modal-desc"><ul class="rule-list"><li><strong>던지기:</strong> 파워 게이지의 성공 구간에 맞춰 버튼을 누르세요.</li><li><strong>보너스:</strong> '윷', '모' 또는 상대 말을 잡으면 한 번 더 던집니다.</li><li><strong>업기:</strong> 자기 팀의 말이 같은 칸에 있으면 함께 이동합니다.</li>                    <li><strong>지름길:</strong> 모서리나 중앙 칸에 멈추면 지름길로 진입할 수 있습니다.</li>
+                    <li><strong>🕸️ 함정:</strong> 판 위에 무작위로 설치된 3개의 함정을 주의하세요! 함정에 멈추면 즉시 출발지로 되돌아갑니다.</li>
+                    <li style="color: var(--accent-color); font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li>
+<li style="font-size: 0.8rem; margin-bottom: 5px;">* 자신의 차례에 SP를 소모하여 스킬을 사용합니다.</li><li><strong>SP 충전:</strong> 상대 말을 잡을 때마다 1 SP가 충전됩니다 (최대 5).</li><li><strong>🛡️ 방어막 (1 SP):</strong> 상대의 잡기를 1회 방어합니다.</li><li><strong>🔄 재도전 (1 SP):</strong> 패를 취소하고 다시 던집니다.</li><li><strong>⚡ 부스트 (2 SP):</strong> 즉시 2칸 전진하며, 이때 상대를 잡아도 보너스 던지기 기회를 얻습니다.</li></ul></div><button class="btn-secondary" style="width: 100%; background:#8e8e93;" onclick="closeRules()">닫기</button></div></div>
     <div id="statsModal" class="modal-overlay"><div class="modal-content"><div class="modal-title">🏆 명예의 전당</div><div style="margin-bottom: 20px;"><div class="stat-row"><span class="stat-label">총 플레이</span><span class="stat-value" id="statTotalGames">0</span></div><div class="stat-row"><span class="stat-label">승리 횟수</span><span class="stat-value" id="statWins">0</span></div><div class="stat-row"><span class="stat-label">승률</span><span class="stat-value" id="statWinRate">0%</span></div><div class="stat-row"><span class="stat-label">최다 잡기 (한 게임)</span><span class="stat-value" id="statMaxCaptures">0</span></div></div><div style="font-weight: 800; font-size: 1rem; text-align: left; margin-top: 20px; color: var(--primary-color);">🏅 업적 배지</div><div class="badge-grid" id="badgeGrid"><div class="badge-item" id="badge_FIRST_WIN"><div class="badge-icon">🥇</div><div class="badge-name">첫 승리</div></div><div class="badge-item" id="badge_YUT_GOD"><div class="badge-icon">⚡</div><div class="badge-name">윷신윷왕</div></div><div class="badge-item" id="badge_CATCH_MASTER"><div class="badge-icon">🎯</div><div class="badge-name">사냥꾼</div></div><div class="badge-item" id="badge_STACK_KING"><div class="badge-icon">🏰</div><div class="badge-name">철벽기사</div></div><div class="badge-item" id="badge_BOOST_CATCH"><div class="badge-icon">🚀</div><div class="badge-name">고속도로</div></div><div class="badge-item" id="badge_SHIELD_SUCCESS"><div class="badge-icon">🛡️</div><div class="badge-name">방어성공</div></div></div><button class="btn-primary" style="margin-top: 30px; background: #8e8e93;" onclick="closeStats()">닫기</button></div></div>
+    
+    <div id="toastModal" class="toast-modal">
+        <div id="toastTitle" class="toast-title"></div>
+        <div id="toastMsg" class="toast-msg"></div>
+    </div>
+
     <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; pointer-events:none; z-index:2000; display:none;"></canvas>
     </div>
 
@@ -434,19 +484,30 @@
 
         const TEAM_COLORS = [ { name: "청팀", code: "#0071e3" }, { name: "홍팀", code: "#ff3b30" }, { name: "초록팀", code: "#34c759" }, { name: "노랑팀", code: "#ffcc00" } ];
         let teams = [];
-        let gameState = { currentTeamIdx: 0, step: 'SETUP', moveQueue: [], selectedMoveId: null, maxUndos: 2 };
+        let gameState = { currentTeamIdx: 0, step: 'SETUP', moveQueue: [], selectedMoveId: null, maxUndos: 2, traps: [], selectedSkillType: null };
         let historyState = null;
         let tokensPerTeam = 2;
         let isPowerUpMode = false;
         let gameMode = 'multi';
         let aiDifficulty = 'normal';
         let aiTimeoutId = null;
-        const aiActionDelay = 2000;
+        const aiActionDelay = 2500;
 
         function initSetup() { addTeamData(0); addTeamData(1); renderTeamSetup(); }
         function renderTeamSetup() {
+            const teamList = document.getElementById('teamList');
             teamList.innerHTML = "";
-            teams.forEach((t, i) => { teamList.innerHTML += `<li style="margin:8px; color:${t.color}; font-weight:700; display:flex; justify-content:space-between; align-items:center;"><span>${t.name} ${t.isAi ? '(AI)' : ''}</span>${i > 1 ? `<button onclick="removeTeam(${i})" style="font-size:0.75rem; cursor:pointer; background:rgba(255,59,48,0.1); color:#ff3b30; border:none; padding:4px 10px; border-radius:8px; font-weight:700;">삭제</button>` : ''}</li>`; });
+            teams.forEach((t, i) => { 
+                teamList.innerHTML += `<li style="padding:6px 12px; color:${t.color}; font-weight:800; display:flex; align-items:center; background:white; border-radius:12px; border:1px solid ${t.color}22; box-shadow:0 2px 4px rgba(0,0,0,0.03); font-size:0.85rem;">
+                    <span>${t.name}</span>
+                    ${i > 1 ? `<button onclick="removeTeam(${i})" style="margin-left:6px; cursor:pointer; background:none; color:#ff3b30; border:none; padding:0; font-weight:900; font-size:1.1rem; line-height:1;">×</button>` : ''}
+                </li>`; 
+            });
+            const btnAdd = document.getElementById('btnAddTeam');
+            btnAdd.disabled = (teams.length >= 4 || gameMode === 'ai');
+            btnAdd.style.opacity = (teams.length >= 4 || gameMode === 'ai') ? "0.4" : "1";
+            // 추가: 팀이 4팀이면 버튼 숨기기
+            btnAdd.style.display = teams.length >= 4 ? 'none' : 'block';
         }
         function addTeamData(colorIdx) { if (teams.length >= 4) return; const c = TEAM_COLORS[colorIdx]; teams.push({ id: teams.length, name: c.name, color: c.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }); }
         function addTeam() { SoundEffect.playClick(); if (teams.length >= 4) return alert("최대 4팀"); addTeamData(teams.length); renderTeamSetup(); }
@@ -475,6 +536,25 @@
             document.getElementById('setupArea').style.display = 'none'; document.getElementById('gameWrapper').style.display = 'flex';
             if (isPowerUpMode) { document.getElementById('skillArea').style.display = 'flex'; document.getElementById('spDisplay').style.display = 'inline'; }
             gameState.step = 'THROW'; gameState.currentTeamIdx = 0; gameState.moveQueue = [];
+            
+            // --- 고정 함정 생성 로직 ---
+            gameState.traps = [];
+            // 1. 지름길 대각선 1 (shortcut_1: 21, 22, 24, 25) 중 1개
+            const shortcut1Candidates = [21, 22, 24, 25];
+            const pos1 = shortcut1Candidates[Math.floor(Math.random() * shortcut1Candidates.length)];
+            gameState.traps.push({ loc: 'shortcut_1', index: pos1 });
+
+            // 2. 지름길 대각선 2 (shortcut_2: 26, 27, 28, 29) 중 1개
+            const shortcut2Candidates = [26, 27, 28, 29];
+            const pos2 = shortcut2Candidates[Math.floor(Math.random() * shortcut2Candidates.length)];
+            gameState.traps.push({ loc: 'shortcut_2', index: pos2 });
+
+            // 3. 홈 근처 외곽 (16~19번) 중 1개 (20번은 홈이므로 제외)
+            const homeNearIndices = [16, 17, 18, 19];
+            const homePos = homeNearIndices[Math.floor(Math.random() * homeNearIndices.length)];
+            gameState.traps.push({ loc: 'outer', index: homePos });
+            // --------------------------
+
             GameStats.resetSession(); drawBoardDots(); updateBoardVisuals(); updateTurnUI();
         }
 
@@ -537,12 +617,19 @@
             const team = teams[gameState.currentTeamIdx]; const move = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
             if (!move) return; let v = 0;
             team.tokens.forEach((t, i) => {
-                if (t.finished) return; const pre = simulateMove(t, move.score); const b = document.createElement('button'); b.className = 'btn-move-token';
-                if (pre.invalidMove) { b.disabled = true; b.style.opacity = "0.4"; } else v++;
-                b.innerHTML = `<div style="width:18px; height:18px; border-radius:50%; background:${team.color};"></div><div style="flex:1;"><div style="font-weight:700; font-size:0.85rem;">말 ${i+1} (${t.index === 0 ? "출발" : t.index+"번"})</div><div style="font-size:0.75rem; color:#86868b;">⮕ ${pre.invalidMove ? "불가" : (pre.finished ? "완주!" : pre.finalIdx+"번")}</div></div>`;
-                if (!pre.invalidMove) b.onclick = () => executeMove(i, move.id); document.getElementById('moveOptions').appendChild(b);
+                if (t.finished) return; const pre = simulateMove(t, move.score);
+                if (!pre.invalidMove) v++;
             });
             if (v === 0) { document.getElementById('subResult').innerText = "이동불가 패 소멸"; setTimeout(() => executeMove(-1, move.id), 1200); }
+            updateBoardVisuals();
+        }
+
+        function showToast(title, msg, duration = 1500) {
+            const toast = document.getElementById('toastModal');
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastMsg').innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, duration);
         }
 
         async function executeMove(tIdx, mId) {
@@ -557,20 +644,31 @@
                 const steps = Math.abs(score), fwd = score > 0;
                 for (let s = 1; s <= steps; s++) {
                     toMove.forEach(t => { const r = simulateMove(t, fwd ? 1 : -1, true); t.index = r.finalIdx; t.location = r.loc; t.finished = r.finished; });
-                    SoundEffect.playMove(); updateBoardVisuals(); if (s < steps) await new Promise(r => setTimeout(r, 250));
+                    SoundEffect.playMove(); updateBoardVisuals(); if (s < steps) await new Promise(r => setTimeout(r, 400));
                 }
                 toMove.forEach(t => { t.index = finalState.finalIdx; t.location = finalState.loc; t.finished = finalState.finished; });
-                let actualCatch = false;
-                teams.forEach((tm, ti) => {
-                    if (ti === gameState.currentTeamIdx) return;
-                    tm.tokens.forEach(e => {
-                        if (!e.finished && e.index !== 0 && e.index === finalState.finalIdx && e.location === finalState.loc) {
-                            if (e.shielded) { e.shielded = false; showMessage("🛡️ 방어막 보호!", "#34c759"); if(!tm.isAi) GameStats.unlockAchievement('SHIELD_SUCCESS'); }
-                            else { e.index = 0; e.location = 'outer'; catchFlag = true; actualCatch = true; if (isPowerUpMode) team.sp = Math.min(5, team.sp + 1); if(!team.isAi) GameStats.currentSession.captures++; }
-                        }
+                
+                // 함정 체크 로직 추가
+                const isTrap = gameState.traps.some(tr => tr.loc === finalState.loc && tr.index === finalState.finalIdx);
+                if (isTrap) {
+                    toMove.forEach(t => { t.index = 0; t.location = 'outer'; t.shielded = false; });
+                    SoundEffect.playFail(); 
+                    showToast("🕸️ 함정!", "함정에 빠져 출발지로 되돌아갑니다.");
+                    shakeBoard();
+                    updateBoardVisuals();
+                } else {
+                    let actualCatch = false;
+                    teams.forEach((tm, ti) => {
+                        if (ti === gameState.currentTeamIdx) return;
+                        tm.tokens.forEach(e => {
+                            if (!e.finished && e.index !== 0 && e.index === finalState.finalIdx && e.location === finalState.loc) {
+                                if (e.shielded) { e.shielded = false; showMessage("🛡️ 방어막 보호!", "#34c759"); if(!tm.isAi) GameStats.unlockAchievement('SHIELD_SUCCESS'); }
+                                else { e.index = 0; e.location = 'outer'; catchFlag = true; actualCatch = true; if (isPowerUpMode) team.sp = Math.min(5, team.sp + 1); if(!team.isAi) GameStats.currentSession.captures++; }
+                            }
+                        });
                     });
-                });
-                if (actualCatch) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 잡았다! 한 번 더!", "#ff3b30"); }
+                    if (actualCatch) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 잡았다! 한 번 더!", "#ff3b30"); }
+                }
                 if (toMove.some(t => t.finished)) { SoundEffect.playGoodThrow(); showMessage("🏁 완주 성공!", "#0071e3"); }
             }
             updateBoardVisuals(); if (checkWin()) return;
@@ -613,40 +711,173 @@
             });
         }
 
-        async function useSkill(type) {
+        async function useSkill(type, tokenIdx = -1) {
             const team = teams[gameState.currentTeamIdx]; if (!isPowerUpMode) return;
+            
+            // 사람 플레이어이고 말을 선택하지 않은 경우 선택창 표시
+            if (!team.isAi && (type === 'shield' || type === 'boost') && tokenIdx === -1) {
+                gameState.selectedSkillType = type;
+                renderSkillTokenOptions(type);
+                return;
+            }
+
             if (type === 'shield') {
-                const target = team.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
-                if (!target) return team.isAi ? null : alert("판 위에 말이 없습니다.");
-                team.sp -= 1; target.shielded = true; showMessage(`${team.name}: 🛡️ 방어막!`, "#34c759");
+                const target = tokenIdx !== -1 ? team.tokens[tokenIdx] : team.tokens.find(t => t.index > 0 && !t.finished && !t.shielded);
+                if (!target) { gameState.selectedSkillType = null; return team.isAi ? null : alert("대상이 없습니다."); }
+                team.sp -= 1; target.shielded = true; 
+                showToast("🛡️ 방어막 사용", `${team.name}의 말이 보호받습니다.`);
+                document.getElementById('moveArea').style.display = 'none';
+                if (gameState.step === 'MOVE') prepareMoveStep(); else updateTurnUI();
             } else if (type === 'reroll') {
                 if (gameState.step !== 'MOVE' || team.sp < 1) return;
-                team.sp -= 1; gameState.moveQueue = []; gameState.step = 'THROW'; showMessage(`${team.name}: 🔄 재도전!`, "#ff9500");
+                team.sp -= 1; gameState.moveQueue = []; gameState.step = 'THROW'; 
+                showToast("🔄 재도전 사용", "던지기 결과가 취소되고 다시 던집니다.");
             } else if (type === 'boost') {
-                const target = team.tokens.find(t => !t.finished);
-                if (!target || team.sp < 2) return team.isAi ? null : alert("불가");
-                team.sp -= 2; const finalSim = simulateMove(target, 2);
+                const target = tokenIdx !== -1 ? team.tokens[tokenIdx] : team.tokens.find(t => !t.finished);
+                if (!target || team.sp < 2) { gameState.selectedSkillType = null; return team.isAi ? null : alert("불가"); }
+                team.sp -= 2; 
+                
+                showToast("⚡ 부스트 사용", `${team.name}의 말이 2칸 전진합니다.`);
+                // 선택창 UI 닫기
+                document.getElementById('moveArea').style.display = 'none';
+                
+                const finalSim = simulateMove(target, 2);
                 const toMove = target.index === 0 ? [target] : team.tokens.filter(t => !t.finished && t.index === target.index && t.location === target.location);
-                for (let s = 1; s <= 2; s++) { toMove.forEach(t => { const r = simulateMove(t, 1, true); t.index = r.finalIdx; t.location = r.loc; t.finished = r.finished; }); SoundEffect.playMove(); updateBoardVisuals(); await new Promise(r => setTimeout(r, 250)); }
+                for (let s = 1; s <= 2; s++) { toMove.forEach(t => { const r = simulateMove(t, 1, true); t.index = r.finalIdx; t.location = r.loc; t.finished = r.finished; }); SoundEffect.playMove(); updateBoardVisuals(); await new Promise(r => setTimeout(r, 400)); }
                 toMove.forEach(t => { t.index = finalSim.finalIdx; t.location = finalSim.loc; t.finished = finalSim.finished; });
-                let c = false;
-                teams.forEach((tm, ti) => {
-                    if (ti === gameState.currentTeamIdx) return;
-                    tm.tokens.forEach(e => {
-                        if (!e.finished && e.index !== 0 && e.index === finalSim.finalIdx && e.location === finalSim.loc) {
-                            if (e.shielded) { e.shielded = false; showMessage("🛡️ 방어막 보호!", "#34c759"); }
-                            else { e.index = 0; e.location = 'outer'; c = true; team.sp = Math.min(5, team.sp + 1); if(!team.isAi) { GameStats.currentSession.captures++; GameStats.unlockAchievement('BOOST_CATCH'); } }
-                        }
+                
+                const isTrap = gameState.traps.some(tr => tr.loc === finalSim.loc && tr.index === finalSim.finalIdx);
+                if (isTrap) {
+                    toMove.forEach(t => { t.index = 0; t.location = 'outer'; t.shielded = false; });
+                    SoundEffect.playFail(); 
+                    showToast("🕸️ 함정!", "함정에 빠져 출발지로 되돌아갑니다.");
+                    shakeBoard(); updateBoardVisuals();
+                } else {
+                    let c = false;
+                    teams.forEach((tm, ti) => {
+                        if (ti === gameState.currentTeamIdx) return;
+                        tm.tokens.forEach(e => {
+                            if (!e.finished && e.index !== 0 && e.index === finalSim.finalIdx && e.location === finalSim.loc) {
+                                if (e.shielded) { e.shielded = false; showMessage("🛡️ 방어막 보호!", "#34c759"); }
+                                else { e.index = 0; e.location = 'outer'; c = true; team.sp = Math.min(5, team.sp + 1); if(!team.isAi) { GameStats.currentSession.captures++; GameStats.unlockAchievement('BOOST_CATCH'); } }
+                            }
+                        });
                     });
-                });
-                if (c) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 부스트 잡기! 한 번 더!", "#ff3b30"); gameState.step = 'THROW'; }
-                else showMessage(`${team.name}: ⚡ 부스트!`, "#0071e3");
+                    if (c) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 부스트 잡기! 한 번 더!", "#ff3b30"); gameState.step = 'THROW'; }
+                    else showMessage(`${team.name}: ⚡ 부스트!`, "#0071e3");
+                }
             }
+            gameState.selectedSkillType = null;
             updateTurnUI(); updateBoardVisuals(); checkWin();
         }
 
+        function renderSkillTokenOptions(type) {
+            const team = teams[gameState.currentTeamIdx];
+            const moveArea = document.getElementById('moveArea');
+            const optionsContainer = document.getElementById('moveOptions');
+            const availableMoves = document.getElementById('availableMoves');
+            
+            moveArea.style.display = 'block';
+            document.getElementById('gaugeArea').style.display = 'none'; 
+            
+            // 패 선택 영역에 칩과 취소 버튼을 함께 배치
+            availableMoves.innerHTML = "";
+            const chip = document.createElement('div');
+            chip.className = 'move-chip selected';
+            chip.style.background = '#0071e3';
+            chip.style.borderColor = '#0071e3';
+            chip.innerText = type === 'shield' ? '🛡️ 방어막 대상 선택' : '⚡ 부스트 대상 선택';
+            availableMoves.appendChild(chip);
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'move-chip';
+            cancelBtn.style.background = '#8e8e93';
+            cancelBtn.style.color = 'white';
+            cancelBtn.innerText = "취소";
+            cancelBtn.onclick = () => {
+                SoundEffect.playClick();
+                gameState.selectedSkillType = null;
+                updateTurnUI();
+                if (gameState.step === 'MOVE') prepareMoveStep();
+                else moveArea.style.display = 'none';
+            };
+            availableMoves.appendChild(cancelBtn);
+
+            optionsContainer.innerHTML = "";
+            updateBoardVisuals();
+        }
+
+        function handleTokenClick(t) {
+            const team = teams[gameState.currentTeamIdx];
+            if (!team || team.isAi) return;
+            const tIdx = team.tokens.indexOf(t);
+            if (tIdx === -1) return;
+
+            if (gameState.selectedSkillType) {
+                useSkill(gameState.selectedSkillType, tIdx);
+            } else if (gameState.step === 'MOVE') {
+                const move = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
+                if (move) {
+                    const pre = simulateMove(t, move.score);
+                    if (!pre.invalidMove) {
+                        executeMove(tIdx, move.id);
+                    }
+                }
+            }
+        }
+
         function drawToken(t, color, cx, cy) {
-            const team = teams.find(tm => tm.tokens.includes(t)); const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const team = teams.find(tm => tm.tokens.includes(t));
+            const isCurrentTeam = (gameState.step !== 'SETUP' && teams[gameState.currentTeamIdx] === team);
+            let isSelectable = false;
+            
+            if (isCurrentTeam && !team.isAi) {
+                if (gameState.selectedSkillType) {
+                    if (!t.finished) {
+                        if (gameState.selectedSkillType === 'shield') {
+                            if (t.index > 0 && !t.shielded) isSelectable = true;
+                        } else if (gameState.selectedSkillType === 'boost') {
+                            isSelectable = true;
+                        }
+                    }
+                } else if (gameState.step === 'MOVE') {
+                    const move = gameState.moveQueue.find(m => m.id === gameState.selectedMoveId);
+                    if (move) {
+                        const pre = simulateMove(t, move.score);
+                        if (!pre.invalidMove) isSelectable = true;
+                    }
+                }
+            }
+
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            if (isSelectable) {
+                g.style.cursor = "pointer";
+                g.onclick = (e) => { e.stopPropagation(); handleTokenClick(t); };
+                
+                const h = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                h.setAttribute("cx", cx); h.setAttribute("cy", cy); h.setAttribute("r", 15);
+                h.setAttribute("fill", "none"); h.setAttribute("stroke", color);
+                h.setAttribute("stroke-width", "2"); h.setAttribute("stroke-dasharray", "4,2");
+                
+                const anim = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+                anim.setAttribute("attributeName", "r");
+                anim.setAttribute("from", "13");
+                anim.setAttribute("to", "18");
+                anim.setAttribute("dur", "1s");
+                anim.setAttribute("repeatCount", "indefinite");
+                h.appendChild(anim);
+
+                const opac = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+                opac.setAttribute("attributeName", "opacity");
+                opac.setAttribute("from", "1");
+                opac.setAttribute("to", "0");
+                opac.setAttribute("dur", "1s");
+                opac.setAttribute("repeatCount", "indefinite");
+                h.appendChild(opac);
+                
+                g.appendChild(h);
+            }
+
             if (t.shielded) { const s = document.createElementNS("http://www.w3.org/2000/svg", "circle"); s.setAttribute("cx", cx); s.setAttribute("cy", cy); s.setAttribute("r", 16); s.setAttribute("fill", "none"); s.setAttribute("stroke", "#34c759"); s.setAttribute("stroke-width", "3"); s.setAttribute("stroke-dasharray", "4,2"); g.appendChild(s); }
             const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 12); c.setAttribute("fill", color); c.setAttribute("class", "token"); c.setAttribute("stroke", "white"); c.setAttribute("stroke-width", "2");
             const emojis = { 'easy':'🐷', 'normal':'🐶', 'hard':'🐉' }, tEmojis = ['🐯', '🐰', '🐸', '🐥'];
@@ -683,8 +914,9 @@
                     const t = team.tokens[i]; if(t.finished) continue; 
                     const pre = simulateMove(t, 2); 
                     if(pre.catch || pre.finished || (t.index===0 && Math.random()<0.3)) { 
+                        const targetIdx = i; // 인덱스 저장
                         aiTimeoutId = setTimeout(()=> {
-                            if (gameState.currentTeamIdx === team.id) useSkill('boost');
+                            if (gameState.currentTeamIdx === team.id) useSkill('boost', targetIdx);
                         }, 600); return true; 
                     } 
                 } 
@@ -693,7 +925,7 @@
                 const targetIdx = team.tokens.findIndex(t => t.index > 0 && !t.finished && !t.shielded && enemyCaptureThreat({ loc: t.location, finalIdx: t.index }) > 100); 
                 if (targetIdx !== -1) { 
                     aiTimeoutId = setTimeout(()=> {
-                        if (gameState.currentTeamIdx === team.id) useSkill('shield');
+                        if (gameState.currentTeamIdx === team.id) useSkill('shield', targetIdx);
                     }, 600); return true; 
                 } 
             }
@@ -713,6 +945,10 @@
             const w = weights[aiDifficulty] || weights['normal'];
             let val = (getStepsToFinish(token) - getStepsToFinish({index:pre.finalIdx, location:pre.loc, finished:pre.finished})) * w.dist;
             if (pre.catch) val += w.capture; if (pre.finished) val += w.finish;
+            
+            // AI 함정 회피 로직 추가
+            const isTrap = gameState.traps.some(tr => tr.loc === pre.loc && tr.index === pre.finalIdx);
+            if (isTrap) val -= 3000; // 함정은 매우 큰 감점
             if (token.location === 'outer' && pre.loc.startsWith('shortcut')) val += w.shortcut;
             if (teams[gameState.currentTeamIdx].tokens.some(t => !t.finished && t !== token && t.index === pre.finalIdx && t.location === pre.loc) && pre.finalIdx !== 0) val += w.stacking;
             if (!pre.finished) val -= enemyCaptureThreat(pre) * w.threat;
@@ -788,10 +1024,54 @@
         }
         const outerP = [{x:350,y:350},{x:350,y:290},{x:350,y:230},{x:350,y:170},{x:350,y:110},{x:350,y:50},{x:290,y:50},{x:230,y:50},{x:170,y:50},{x:110,y:50},{x:50,y:50},{x:50,y:110},{x:50,y:170},{x:50,y:230},{x:50,y:290},{x:50,y:350},{x:110,y:350},{x:170,y:350},{x:230,y:350},{x:290,y:350},{x:350,y:350}];
         function getCoords(i, l) { if (l === 'shortcut_1') { if (i === 5) return outerP[5]; const m = { 21:{x:300,y:100}, 22:{x:250,y:150}, 23:{x:200,y:200}, 24:{x:150,y:250}, 25:{x:100,y:300} }; return m[i] || outerP[i]; } if (l === 'shortcut_2') { if (i === 10) return outerP[10]; const m = { 26:{x:100,y:100}, 27:{x:150,y:150}, 23:{x:200,y:200}, 28:{x:250,y:250}, 29:{x:300,y:300} }; return m[i] || outerP[i]; } return outerP[i]; }
-        function drawBoardDots() { document.getElementById('boardDots').innerHTML = ""; outerP.forEach((p, i) => { if (i<20) createDot(p.x, p.y, i); }); createDot(300,100,21); createDot(250,150,22); createDot(200,200,'center'); createDot(150,250,24); createDot(100,300,25); createDot(100,100,26); createDot(150,150,27); createDot(250,250,28); createDot(300,300,29); }
+        function drawBoardDots() { 
+            document.getElementById('boardDots').innerHTML = ""; 
+            outerP.forEach((p, i) => { if (i<20) createDot(p.x, p.y, i); }); 
+            createDot(300,100,21); createDot(250,150,22); createDot(200,200,'center'); createDot(150,250,24); createDot(100,300,25); createDot(100,100,26); createDot(150,150,27); createDot(250,250,28); createDot(300,300,29); 
+
+            // 함정 시각적 표시 강화
+            if (gameState.traps) {
+                gameState.traps.forEach(tr => {
+                    const pos = getCoords(tr.index, tr.loc);
+                    
+                    // 검은색 강조 원 추가
+                    const trapCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    trapCircle.setAttribute("cx", pos.x);
+                    trapCircle.setAttribute("cy", pos.y);
+                    trapCircle.setAttribute("r", 9); // 일반 점(7)보다 크게
+                    trapCircle.setAttribute("fill", "#1d1d1f"); // Apple Black
+                    trapCircle.setAttribute("stroke", "#ff3b30"); // 경고용 빨간 테두리
+                    trapCircle.setAttribute("stroke-width", "1.5");
+                    document.getElementById('boardDots').appendChild(trapCircle);
+
+                    // 거미줄 아이콘
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    txt.setAttribute("x", pos.x);
+                    txt.setAttribute("y", pos.y + 4);
+                    txt.setAttribute("font-size", "11");
+                    txt.setAttribute("text-anchor", "middle");
+                    txt.setAttribute("style", "pointer-events: none;");
+                    txt.textContent = "🕸️";
+                    document.getElementById('boardDots').appendChild(txt);
+
+                    // "함정!" 텍스트 추가
+                    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    label.setAttribute("x", pos.x);
+                    label.setAttribute("y", pos.y + 20); // 점 아래쪽에 배치
+                    label.setAttribute("font-size", "8");
+                    label.setAttribute("font-weight", "800");
+                    label.setAttribute("text-anchor", "middle");
+                    label.setAttribute("fill", "#ff3b30"); // 경고 빨간색
+                    label.setAttribute("style", "pointer-events: none; letter-spacing: -0.5px;");
+                    label.textContent = "함정!";
+                    document.getElementById('boardDots').appendChild(label);
+                });
+            }
+        }
         function createDot(cx, cy, id) { const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 7); c.setAttribute("class", "board-dot" + (id===0?' start':(id==='center'?' center':([5,10,15].includes(id)?' corner':'')))); document.getElementById('boardDots').appendChild(c); }
         const sticks = document.getElementById('yutContainer').children;
         initSetup();
+
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); }); }
     </script>
 </body>
