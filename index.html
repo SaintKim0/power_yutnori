@@ -239,10 +239,11 @@
         }
 
         .btn-undo {
-            background-color: #f2f2f7; color: #1d1d1f; border: 1px solid rgba(0,0,0,0.1); padding: 10px;
-            font-size: 0.85rem; border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
+            background-color: #f2f2f7; color: #1d1d1f; border: 1px solid rgba(0,0,0,0.1); padding: 12px;
+            font-size: 1.2rem; border-radius: 14px; cursor: pointer; flex: 1; margin-top: 0;
             font-weight: 600; display: none;
             transition: all 0.2s;
+            align-items: center; justify-content: center;
         }
         .btn-undo:active { transform: scale(0.98); background: #e5e5ea; }
 
@@ -464,12 +465,15 @@
             </div>
             <div class="yut-container" id="yutContainer"><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div><div class="stick round"></div></div>
             <div class="result-text" id="mainResult">준비</div><div class="info-text" id="subResult">버튼을 눌러 힘을 조절하세요!</div>
-            <div id="gaugeArea"><div class="gauge-wrapper"><div class="zone zone-weak">약함</div><div class="zone zone-safe">성공</div><div class="zone zone-over">낙장</div><div class="power-bar" id="powerBar"></div></div><button class="btn-primary" id="actionBtn" onclick="toggleThrow()">던지기 (START)</button></div>
+            <div id="gaugeArea"><div class="gauge-wrapper"><div class="zone zone-weak">약함</div><div class="zone zone-safe">성공</div><div class="zone zone-over">낙장</div><div class="power-bar" id="powerBar"></div></div></div>
             <div id="moveArea" style="display: none;">
                 <div style="font-size:0.8rem; font-weight:700; color:#86868b; margin-bottom:6px; text-align:left; padding-left:4px;">패 선택</div><div id="availableMoves" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:10px;"></div>
                 <div id="moveOptions"></div>
             </div>
-            <button id="btnUndo" class="btn-undo" onclick="undoLastMove()">↩ 물리기 (2회 남음)</button>
+            <div class="action-btn-row" style="display: flex; gap: 8px; margin-top: 10px; width: 100%; align-items: stretch;">
+                <button class="btn-primary" id="actionBtn" onclick="toggleThrow()" style="flex: 0 0 35%; padding: 12px 5px; font-size: 0.85rem;">던지기 (START)</button>
+                <button id="btnUndo" class="btn-undo" onclick="undoLastMove()">↩</button>
+            </div>
         </div>
     </div>
 
@@ -723,7 +727,10 @@
                 if (toMove.some(t => t.finished)) { SoundEffect.playGoodThrow(); showMessage("🏁 완주 성공!", "#0071e3"); }
             }
             updateBoardVisuals(); if (checkWin()) return;
-            if (team.remainingUndos > 0) { document.getElementById('btnUndo').innerText = `↩ 물리기 (${team.remainingUndos}회)`; document.getElementById('btnUndo').style.display = 'block'; }
+            if (team.remainingUndos > 0) { 
+                document.getElementById('btnUndo').innerText = `↩`; 
+                document.getElementById('btnUndo').style.display = 'flex'; 
+            }
             if (catchFlag) { setTimeout(() => { gameState.step = 'THROW'; updateTurnUI(); }, 1000); return; }
             if (gameState.moveQueue.length > 0) prepareMoveStep(); else setTimeout(nextTurn, 1000);
         }
@@ -1060,6 +1067,7 @@
             if (gameState.step === 'THROW') {
                 document.getElementById('moveArea').style.display = 'none';
                 document.getElementById('gaugeArea').style.display = 'block'; 
+                document.getElementById('actionBtn').style.display = 'block';
                 if (team.isAi) {
                     document.getElementById('actionBtn').disabled = true; 
                     document.getElementById('actionBtn').innerText = "AI 차례 (준비 중...)"; 
@@ -1070,6 +1078,7 @@
             } else { 
                 document.getElementById('gaugeArea').style.display = 'none'; 
                 document.getElementById('moveArea').style.display = 'block';
+                document.getElementById('actionBtn').style.display = 'none';
             } 
             optimizeLayout();
             maybeTriggerAi(); 
