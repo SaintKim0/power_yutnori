@@ -467,7 +467,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.2 (전체 동기화 로직 완성판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.3 (다시하기 기능 추가판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -516,7 +516,17 @@
         </div>
     </div>
 
-    <div id="winModal" class="modal-overlay"><div class="modal-content"><div class="modal-title" id="winTitle">승리!</div><div class="modal-desc" id="winDesc">모든 말이 완주했습니다!</div><button class="btn-primary" onclick="location.reload()">다시 하기</button></div></div>
+    <!-- 승리 모달 -->
+    <div id="winModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title" id="winTitle">승리!</div>
+            <div class="modal-desc" id="winDesc">모든 말이 완주했습니다!</div>
+            <div id="winModalButtons" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button id="btnRestart" class="btn-primary" onclick="handleRestartClick()">다시 하기</button>
+                <button id="btnExit" class="btn-secondary" onclick="location.reload()" style="margin-top: 5px;">메뉴로 나가기</button>
+            </div>
+        </div>
+    </div>
     <div id="ruleModal" class="modal-overlay"><div class="modal-content" style="text-align: left;"><div class="modal-title" style="text-align: center;">📜 게임 방법</div><div class="modal-desc"><ul class="rule-list"><li><strong>던지기:</strong> 파워 게이지의 성공 구간에 맞춰 버튼을 누르세요.</li><li><strong>보너스:</strong> '윷', '모' 또는 상대 말을 잡으면 한 번 더 던집니다.</li><li><strong>업기:</strong> 자기 팀의 말이 같은 칸에 있으면 함께 이동합니다.</li>                    <li><strong>지름길:</strong> 모서리나 중앙 칸에 멈추면 지름길로 진입할 수 있습니다.</li>
                     <li><strong>🕸️ 함정:</strong> 판 위에 무작위로 설치된 3개의 함정을 주의하세요! 함정에 멈추면 즉시 출발지로 되돌아갑니다.</li>
                     <li style="color: var(--accent-color); font-weight: bold; margin-top: 15px; list-style: none; margin-left: -15px;">✨ 파워업 모드 (SP 스킬)</li>
@@ -821,6 +831,29 @@
                             }
                         });
                     }
+                } else if (data.type === 'restartRequest') {
+                    // 호스트가 요청을 받으면 다른 참가자들에게 전파하거나 본인이 수락
+                    showRestartConfirm();
+                    // 다른 참가자들에게도 알림 (다인 모드 대비)
+                    connections.forEach(connItem => {
+                        if (connItem.peer !== c.peer && connItem.open) {
+                            connItem.send({ type: 'restartRequest' });
+                        }
+                    });
+                } else if (data.type === 'restartResponse') {
+                    if (data.accepted) {
+                        showToast("상대방이 수락했습니다!", "게임을 다시 시작합니다.");
+                        resetGameOnline();
+                    } else {
+                        alert("상대방이 거절했습니다.");
+                        location.reload();
+                    }
+                    // 다른 참가자들에게도 전파
+                    connections.forEach(connItem => {
+                        if (connItem.peer !== c.peer && connItem.open) {
+                            connItem.send({ type: 'restartResponse', accepted: data.accepted });
+                        }
+                    });
                 }
             });
 
@@ -938,6 +971,16 @@
                         handleRemoteAction(data.action);
                     } else if (data.type === 'sync') {
                         applySyncState(data);
+                    } else if (data.type === 'restartRequest') {
+                        showRestartConfirm();
+                    } else if (data.type === 'restartResponse') {
+                        if (data.accepted) {
+                            showToast("상대방이 수락했습니다!", "게임을 다시 시작합니다.");
+                            resetGameOnline();
+                        } else {
+                            alert("상대방이 거절했습니다.");
+                            location.reload();
+                        }
                     }
                 });
 
@@ -963,6 +1006,71 @@
         function startGameOnline() {
             isOnlineMode = true;
             initGame();
+        }
+
+        function handleRestartClick() {
+            if (!isOnlineMode) {
+                location.reload();
+                return;
+            }
+            
+            SoundEffect.playClick();
+            document.getElementById('btnRestart').innerText = "요청 중...";
+            document.getElementById('btnRestart').disabled = true;
+            
+            const data = { type: 'restartRequest' };
+            if (isHost) broadcast(data); else sendToHost(data);
+        }
+
+        function showRestartConfirm() {
+            const container = document.getElementById('winModalButtons');
+            container.innerHTML = `
+                <div style="margin-bottom: 10px; color: #1d1d1f; font-weight: 600;">상대방이 한 판 더 하기를 요청했습니다!</div>
+                <button class="btn-primary" onclick="respondToRestart(true)">수락</button>
+                <button class="btn-secondary" onclick="respondToRestart(false)" style="margin-top: 5px;">거절</button>
+            `;
+        }
+
+        function respondToRestart(accepted) {
+            SoundEffect.playClick();
+            const data = { type: 'restartResponse', accepted };
+            if (isHost) broadcast(data); else sendToHost(data);
+            
+            if (accepted) {
+                resetGameOnline();
+            } else {
+                location.reload();
+            }
+        }
+
+        function resetGameOnline() {
+            document.getElementById('winModal').style.display = 'none';
+            // 버튼 상태 복구
+            document.getElementById('winModalButtons').innerHTML = `
+                <button id="btnRestart" class="btn-primary" onclick="handleRestartClick()">다시 하기</button>
+                <button id="btnExit" class="btn-secondary" onclick="location.reload()" style="margin-top: 5px;">메뉴로 나가기</button>
+            `;
+            
+            // 호스트인 경우 새로운 게임 설정 전파
+            if (isHost) {
+                const initialState = {
+                    maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
+                    tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
+                    isPowerUpMode: document.getElementById('powerUpMode').checked,
+                    teams: teams.map(t => ({ name: t.name, color: t.color })),
+                    traps: [] 
+                };
+                
+                const s1 = [21, 22, 24, 25], s2 = [26, 27, 28, 29], outer = [16, 17, 18, 19];
+                initialState.traps = [
+                    { loc: 'shortcut_1', index: s1[Math.floor(Math.random() * s1.length)] },
+                    { loc: 'shortcut_2', index: s2[Math.floor(Math.random() * s2.length)] },
+                    { loc: 'outer', index: outer[Math.floor(Math.random() * outer.length)] }
+                ];
+
+                broadcast({ type: 'gameStarted', initialState });
+                initGame(initialState); 
+            }
         }
 
         function handleRemoteAction(action) {
