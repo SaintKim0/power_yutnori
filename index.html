@@ -428,9 +428,11 @@
         <div id="aiDifficultyArea" class="input-group" style="display: none; padding: 12px;"><label for="aiDifficulty" style="font-size: 0.85rem;">AI 캐릭터 (난이도)</label><select id="aiDifficulty" style="font-size: 0.85rem;"><option value="easy">꼬마 도야 (초보)</option><option value="normal" selected>영리한 돗개 (보통)</option><option value="hard">전설의 윷신 (고수)</option></select></div>
 
         <div style="margin-bottom: 15px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
-            <p style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0 0 10px 0;">참가 팀 (최대 4팀)</p>
-            <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px;"></ul>
-            <button id="btnAddTeam" class="btn-secondary" style="width:100%; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0;" onclick="addTeam()">+ 팀 추가</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <p style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0;">참가 팀 (최대 4팀)</p>
+                <button id="btnAddTeam" class="btn-secondary" style="width:auto; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0; padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;" onclick="addTeam()">+ 팀 추가</button>
+            </div>
+            <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 0;"></ul>
         </div>
 
         <div class="input-group" style="padding: 12px;"><label style="display: flex; align-items: center; cursor: pointer; font-size: 0.85rem;"><input type="checkbox" id="powerUpMode" style="width: auto; margin-right: 10px;">파워업 모드 (특수 스킬)</label></div>
