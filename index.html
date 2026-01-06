@@ -467,7 +467,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.4 (상대방 차례 상호작용 방지판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.5 (다인용 다시하기 개선판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -807,7 +807,8 @@
                     }
                     const teamIdx = teams.length;
                     const color = TEAM_COLORS[teamIdx % 4];
-                    teams.push({ id: teamIdx, name: data.playerName, color: color.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
+                    // 접속한 클라이언트의 peerId 저장
+                    teams.push({ id: teamIdx, name: data.playerName, color: color.code, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: c.peer });
                     
                     c.send({
                         type: 'playerList',
@@ -841,17 +842,11 @@
                         }
                     });
                 } else if (data.type === 'restartResponse') {
-                    if (data.accepted) {
-                        showToast("상대방이 수락했습니다!", "게임을 다시 시작합니다.");
-                        resetGameOnline();
-                    } else {
-                        alert("상대방이 거절했습니다.");
-                        location.reload();
-                    }
+                    handleHostRestartVote(data.peerId, data.accepted);
                     // 다른 참가자들에게도 전파
                     connections.forEach(connItem => {
                         if (connItem.peer !== c.peer && connItem.open) {
-                            connItem.send({ type: 'restartResponse', accepted: data.accepted });
+                            connItem.send({ type: 'restartResponse', accepted: data.accepted, peerId: data.peerId });
                         }
                     });
                 }
@@ -891,7 +886,8 @@
 
                 onlineRoomId = peer.id; 
                 myTeamIdx = 0;
-                teams = [{ id: 0, name: onlinePlayerName, color: TEAM_COLORS[0].code, tokens: [], remainingUndos: 2, isAi: false, sp: 3 }];
+                // peerId를 팀 정보에 추가 (방장 자신)
+                teams = [{ id: 0, name: onlinePlayerName, color: TEAM_COLORS[0].code, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: peer.id }];
                 renderTeamSetup();
 
                 const display = document.getElementById('roomInfoDisplay');
@@ -955,13 +951,23 @@
 
                 newConn.on('data', (data) => {
                     if (data.type === 'playerList') {
-                        teams = [];
+                        // 기존 peerId 등의 정보 보존을 위해 업데이트 로직 정교화
+                        const newTeams = [];
                         data.teams.forEach((t, i) => {
-                            teams.push({ id: i, name: t.name, color: t.color, tokens: [], remainingUndos: 2, isAi: false, sp: 3 });
+                            const existingTeam = teams.find(et => et.name === t.name);
+                            if (existingTeam) {
+                                newTeams.push({ ...existingTeam, id: i, color: t.color });
+                            } else {
+                                newTeams.push({ id: i, name: t.name, color: t.color, tokens: [], remainingUndos: 2, isAi: false, sp: 3, peerId: (t.name === onlinePlayerName ? peer.id : null) });
+                            }
                         });
+                        teams = newTeams;
                         if (data.myTeamIdx !== undefined) myTeamIdx = data.myTeamIdx;
+                        
+                        if (data.restart) {
+                            showToast("팀 재구성", "나간 플레이어를 제외하고 게임을 다시 준비합니다.");
+                        }
                         renderTeamSetup();
-                        showToast("입장 완료", "모든 플레이어가 들어오면 시작!");
                     } else if (data.type === 'error') {
                         alert(data.msg);
                         location.reload();
@@ -975,11 +981,9 @@
                         showRestartConfirm();
                     } else if (data.type === 'restartResponse') {
                         if (data.accepted) {
-                            showToast("상대방이 수락했습니다!", "게임을 다시 시작합니다.");
-                            resetGameOnline();
+                            showToast("수락 알림", "플레이어가 한 판 더 하기를 수락했습니다.");
                         } else {
-                            alert("상대방이 거절했습니다.");
-                            location.reload();
+                            showToast("플레이어 나감", "플레이어 한 명이 거절하고 나갔습니다.");
                         }
                     }
                 });
@@ -1018,9 +1022,19 @@
             document.getElementById('btnRestart').innerText = "요청 중...";
             document.getElementById('btnRestart').disabled = true;
             
+            // 본인은 수락한 것으로 처리
+            restartVotes[peer.id] = true;
+            
             const data = { type: 'restartRequest' };
             if (isHost) broadcast(data); else sendToHost(data);
+            
+            // 호스트인데 혼자 남은 경우 즉시 재시작 가능하게 처리
+            if (isHost && connections.length === 0) {
+                resetGameOnline();
+            }
         }
+
+        let restartVotes = {}; // 호스트 전용: {peerId: boolean}
 
         function showRestartConfirm() {
             const container = document.getElementById('winModalButtons');
@@ -1033,26 +1047,82 @@
 
         function respondToRestart(accepted) {
             SoundEffect.playClick();
-            const data = { type: 'restartResponse', accepted };
-            if (isHost) broadcast(data); else sendToHost(data);
+            const data = { type: 'restartResponse', accepted, peerId: peer.id };
             
-            if (accepted) {
-                resetGameOnline();
+            if (isHost) {
+                handleHostRestartVote(peer.id, accepted);
             } else {
-                location.reload();
+                sendToHost(data);
+                if (!accepted) {
+                    location.reload();
+                } else {
+                    document.getElementById('winModalButtons').innerHTML = `<div style="color:#0071e3; font-weight:600;">방장의 승인을 기다리는 중...</div>`;
+                }
+            }
+        }
+
+        function handleHostRestartVote(voterId, accepted) {
+            if (!isHost) return;
+            
+            if (!accepted) {
+                // 거절한 유저 제거
+                const leavingTeam = teams.find(t => t.peerId === voterId);
+                if (leavingTeam) {
+                    showToast("플레이어 나감", `${leavingTeam.name}님이 거절하고 나갔습니다.`);
+                    teams = teams.filter(t => t.peerId !== voterId);
+                }
+                // 해당 커넥션 종료
+                const connToClose = connections.find(c => c.peer === voterId);
+                if (connToClose) connToClose.close();
+            } else {
+                restartVotes[voterId] = true;
+                const voterTeam = teams.find(t => t.peerId === voterId);
+                if (voterTeam) showToast("수락 알림", `${voterTeam.name}님이 수락했습니다.`);
+            }
+
+            // 모든 현재 접속자가 투표했는지 확인
+            const activePeerIds = connections.map(c => c.peer);
+            activePeerIds.push(peer.id); // 방장 포함
+            
+            const allResponded = activePeerIds.every(id => restartVotes[id] !== undefined);
+            
+            if (allResponded) {
+                const acceptCount = activePeerIds.filter(id => restartVotes[id] === true).length;
+                if (acceptCount > 0) {
+                    resetGameOnline();
+                } else {
+                    location.reload();
+                }
             }
         }
 
         function resetGameOnline() {
             document.getElementById('winModal').style.display = 'none';
+            restartVotes = {}; // 투표 초기화
+
+            // 팀 정보 재정렬 (나간 사람 제외하고 ID와 색상 재배정)
+            teams.forEach((t, i) => {
+                t.id = i;
+                t.color = TEAM_COLORS[i % 4].code;
+            });
+
+            // 내 팀 인덱스 다시 찾기 (방장은 보통 0이지만 안전하게)
+            myTeamIdx = teams.findIndex(t => t.peerId === peer.id);
+
             // 버튼 상태 복구
             document.getElementById('winModalButtons').innerHTML = `
                 <button id="btnRestart" class="btn-primary" onclick="handleRestartClick()">다시 하기</button>
                 <button id="btnExit" class="btn-secondary" onclick="location.reload()" style="margin-top: 5px;">메뉴로 나가기</button>
             `;
             
-            // 호스트인 경우 새로운 게임 설정 전파
             if (isHost) {
+                // 남은 인원들에게 갱신된 플레이어 리스트 전파
+                broadcast({
+                    type: 'playerList',
+                    teams: teams.map(t => ({ name: t.name, color: t.color })),
+                    restart: true
+                });
+
                 const initialState = {
                     maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
                     tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
