@@ -933,7 +933,7 @@
                         alert(data.msg);
                         location.reload();
                     } else if (data.type === 'gameStarted') {
-                        startGameOnline();
+                        initGame(data.initialState);
                     } else if (data.type === 'action') {
                         handleRemoteAction(data.action);
                     }
@@ -991,28 +991,45 @@
             closeAiModal();
         }
 
-        function initGame() {
-            if (gameMode === 'online' && myTeamIdx === 0 && !isOnlineMode) {
-                // 방장(0번팀)이 게임 시작을 누르면 방 전체에 시작 알림
+        function initGame(remoteState = null) {
+            // 온라인 모드이고 방장이며 직접 시작하는 경우 (참가자에게 상태 전송)
+            if (gameMode === 'online' && isHost && !remoteState && !isOnlineMode) {
+                SoundEffect.init();
                 const initialState = {
                     maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
                     tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
                     isPowerUpMode: document.getElementById('powerUpMode').checked,
-                    traps: [] // 서버에서 생성할 수도 있으나 현재는 P2P 공유
+                    traps: [] 
                 };
-                if (isHost) {
-                    broadcast({ type: 'gameStarted', initialState });
-                    startGameOnline();
-                }
+                
+                // 함정 생성 (방장이 한 번만 생성)
+                const s1 = [21, 22, 24, 25], s2 = [26, 27, 28, 29], outer = [16, 17, 18, 19];
+                initialState.traps = [
+                    { loc: 'shortcut_1', index: s1[Math.floor(Math.random() * s1.length)] },
+                    { loc: 'shortcut_2', index: s2[Math.floor(Math.random() * s2.length)] },
+                    { loc: 'outer', index: outer[Math.floor(Math.random() * outer.length)] }
+                ];
+
+                broadcast({ type: 'gameStarted', initialState });
+                initGame(initialState); // 본인(방장)도 이 상태로 시작
                 return;
             }
 
+            // 초기 설정 적용
+            const state = remoteState || {
+                maxUndos: parseInt(document.getElementById('undoCountInput').value) || 2,
+                tokensPerTeam: parseInt(document.getElementById('tokenCountInput').value) || 2,
+                isPowerUpMode: document.getElementById('powerUpMode').checked,
+                traps: []
+            };
+
             SoundEffect.init(); SoundEffect.playClick();
-            const maxVal = parseInt(document.getElementById('undoCountInput').value) || 2;
-            tokensPerTeam = parseInt(document.getElementById('tokenCountInput').value) || 2;
-            gameState.maxUndos = maxVal; isPowerUpMode = document.getElementById('powerUpMode').checked;
-            gameMode = modeSelect.value; 
-            // aiDifficulty는 모달에서 이미 설정됨 (기본값 'normal')
+            tokensPerTeam = state.tokensPerTeam;
+            gameState.maxUndos = state.maxUndos;
+            isPowerUpMode = state.isPowerUpMode;
+            gameMode = modeSelect.value;
+            isOnlineMode = (gameMode === 'online');
+
             if (gameMode === 'ai') {
                 if (teams.length > 2) teams = teams.slice(0, 2);
                 const aiNames = { 'easy': '꼬마 도야', 'normal': '영리한 돗개', 'hard': '전설의 윷신' };
@@ -1020,23 +1037,39 @@
             } else if (gameMode === 'multi') { 
                 teams.forEach((t, i) => { t.isAi = false; t.name = TEAM_COLORS[i%4].name; t.color = TEAM_COLORS[i%4].code; }); 
             }
-            // 온라인 모드일 때는 이미 playerJoined에서 teams 이름 등이 설정됨
             
-            teams.forEach(t => { t.remainingUndos = maxVal; t.sp = 3; t.tokens = []; for(let i=0; i<tokensPerTeam; i++) t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, shielded: false }); });
-            document.getElementById('setupArea').style.display = 'none'; document.getElementById('gameWrapper').style.display = 'flex';
-            if (isPowerUpMode) { document.getElementById('skillArea').style.display = 'flex'; document.getElementById('spDisplay').style.display = 'inline'; }
-            gameState.step = 'THROW'; gameState.currentTeamIdx = 0; gameState.moveQueue = [];
-            
-            // --- 함정 생성 로직 (온라인 시 방장이 생성한 함정 공유 가능) ---
-            if (!isOnlineMode || myTeamIdx === 0) {
+            // 모든 팀의 말 초기화 (공통)
+            teams.forEach(t => { 
+                t.remainingUndos = state.maxUndos; 
+                t.sp = 3; 
+                t.tokens = []; 
+                for(let i=0; i<tokensPerTeam; i++) {
+                    t.tokens.push({ id: i, index: 0, location: 'outer', finished: false, shielded: false }); 
+                }
+            });
+
+            // 함정 위치 동기화
+            if (state.traps && state.traps.length > 0) {
+                gameState.traps = state.traps;
+            } else if (!isOnlineMode) {
+                // 온라인이 아닐 때만 자체 생성
                 gameState.traps = [];
-                const shortcut1Candidates = [21, 22, 24, 25];
-                gameState.traps.push({ loc: 'shortcut_1', index: shortcut1Candidates[Math.floor(Math.random() * shortcut1Candidates.length)] });
-                const shortcut2Candidates = [26, 27, 28, 29];
-                gameState.traps.push({ loc: 'shortcut_2', index: shortcut2Candidates[Math.floor(Math.random() * shortcut2Candidates.length)] });
-                const homeNearIndices = [16, 17, 18, 19];
-                gameState.traps.push({ loc: 'outer', index: homeNearIndices[Math.floor(Math.random() * homeNearIndices.length)] });
+                const s1 = [21, 22, 24, 25], s2 = [26, 27, 28, 29], outer = [16, 17, 18, 19];
+                gameState.traps.push({ loc: 'shortcut_1', index: s1[Math.floor(Math.random() * s1.length)] });
+                gameState.traps.push({ loc: 'shortcut_2', index: s2[Math.floor(Math.random() * s2.length)] });
+                gameState.traps.push({ loc: 'outer', index: outer[Math.floor(Math.random() * outer.length)] });
             }
+
+            document.getElementById('setupArea').style.display = 'none'; 
+            document.getElementById('gameWrapper').style.display = 'flex';
+            if (isPowerUpMode) { 
+                document.getElementById('skillArea').style.display = 'flex'; 
+                document.getElementById('spDisplay').style.display = 'inline'; 
+            }
+            
+            gameState.step = 'THROW'; 
+            gameState.currentTeamIdx = 0; 
+            gameState.moveQueue = [];
 
             GameStats.resetSession(); drawBoardDots(); updateBoardVisuals(); updateTurnUI();
             setTimeout(optimizeLayout, 100);
