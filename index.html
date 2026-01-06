@@ -551,7 +551,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.12 (다시하기 동기화 버그 수정판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.13 (혼자하기 모드 버그 수정판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -779,7 +779,13 @@
                 gameMode = 'ai';
                 
                 // 팀 초기화 (2팀 고정)
-                if (teams.length > 2) teams = teams.slice(0, 2);
+                if (teams.length < 2) {
+                    teams = [];
+                    addTeamData(0);
+                    addTeamData(1);
+                } else if (teams.length > 2) {
+                    teams = teams.slice(0, 2);
+                }
                 renderTeamSetup();
                 showAiDifficultyModal();
             } else {
