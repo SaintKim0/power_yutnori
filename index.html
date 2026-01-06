@@ -515,12 +515,8 @@
             </div>
             
             <!-- 오프라인 팀 설정 -->
-            <div id="offlineArea" style="display: none; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <p style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0;">참가 팀 (최대 4팀)</p>
-                    <button id="btnAddTeam" class="btn-secondary" style="width:auto; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0; padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;" onclick="addTeam()">+ 팀 추가</button>
-                </div>
-                <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 0;"></ul>
+            <div id="offlineArea" style="display: none;">
+                <!-- 이 영역은 이제 비어있거나 삭제해도 되지만, 구조 유지를 위해 둡니다 -->
             </div>
 
             <!-- 온라인 대전 설정 -->
@@ -531,6 +527,15 @@
                     <button class="btn-secondary" style="flex: 1; margin: 0; font-size: 0.75rem;" onclick="showJoinRoomPrompt()">방 참가</button>
                 </div>
                 <div id="roomInfoDisplay" style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--accent-color); display: none;"></div>
+            </div>
+
+            <!-- 공통 팀 리스트 영역 (온라인/오프라인 공용) -->
+            <div id="commonTeamArea" style="margin-top: 15px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <p id="teamListLabel" style="font-weight: 700; color: #86868b; font-size: 0.85rem; margin: 0;">참가 팀 (최대 4팀)</p>
+                    <button id="btnAddTeam" class="btn-secondary" style="width:auto; background:rgba(0,0,0,0.05); color:#1d1d1f; border:1px solid rgba(0,0,0,0.1); font-weight:600; margin:0; padding: 6px 12px; font-size: 0.75rem; border-radius: 10px;" onclick="addTeam()">+ 팀 추가</button>
+                </div>
+                <ul id="teamList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 0;"></ul>
             </div>
         </div>
 
@@ -546,7 +551,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.8 (방 만들기 버그 수정판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.9 (온라인 접속 명단 및 버그 수정판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -751,6 +756,8 @@
             const onlineArea = document.getElementById('onlineArea');
             const btnStart = document.getElementById('btnStartGame');
             const btnAdd = document.getElementById('btnAddTeam');
+            const teamArea = document.getElementById('commonTeamArea');
+            const teamLabel = document.getElementById('teamListLabel');
 
             if (mode === 'multi') {
                 btnOffline.style.background = 'var(--accent-color)';
@@ -760,6 +767,9 @@
                 
                 offlineArea.style.display = 'block';
                 onlineArea.style.display = 'none';
+                teamArea.style.display = 'block';
+                teamLabel.innerText = "참가 팀 (최대 4팀)";
+                btnAdd.style.display = 'block';
                 btnAdd.disabled = false;
                 btnAdd.style.opacity = "1";
             } else {
@@ -770,6 +780,9 @@
                 
                 onlineArea.style.display = 'block';
                 offlineArea.style.display = 'none';
+                teamArea.style.display = 'block';
+                teamLabel.innerText = "현재 접속 인원";
+                btnAdd.style.display = 'none'; // 온라인은 팀추가 버튼 숨김
                 btnAdd.disabled = true;
                 btnAdd.style.opacity = "0.4";
                 initP2P();
@@ -881,6 +894,12 @@
         let isConnecting = false;
 
         function initP2P(customId, callback) {
+            // 커스텀 ID(방장 코드)가 제공되었는데 현재 Peer와 ID가 다르다면 새로 생성해야 함
+            if (customId && peer && !peer.destroyed && peer.id !== customId) {
+                peer.destroy();
+                peer = null;
+            }
+
             if (isConnecting && !customId) return; 
             isConnecting = true;
 
