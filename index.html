@@ -467,7 +467,7 @@
             <button class="btn-sound-toggle" style="margin-top:0; flex:1;" onclick="SoundEffect.toggleMute()">🔊 소리 ON</button>
             <button class="btn-info" style="margin-top:0; flex:1; background:var(--accent-color);" onclick="showStats()">🏆 기록실</button>
         </div>
-        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.1 (낙장 동기화 수정판)</div>
+        <div style="margin-top: 20px; font-size: 0.7rem; color: #ccc;">버전: v1.1.2 (전체 동기화 로직 완성판)</div>
     </div>
 
     <div class="game-wrapper" id="gameWrapper">
@@ -936,6 +936,8 @@
                         initGame(data.initialState);
                     } else if (data.type === 'action') {
                         handleRemoteAction(data.action);
+                    } else if (data.type === 'sync') {
+                        applySyncState(data);
                     }
                 });
 
@@ -1603,6 +1605,42 @@
                 traps: gameState.traps
             };
             broadcast(stateData);
+        }
+
+        function applySyncState(data) {
+            if (isHost) return; // 방장은 동기화 데이터를 받지 않음
+            
+            // 팀 및 말 상태 업데이트
+            data.teams.forEach((remoteTeam, i) => {
+                if (teams[i]) {
+                    teams[i].sp = remoteTeam.sp;
+                    teams[i].remainingUndos = remoteTeam.remainingUndos;
+                    // 말 위치 동기화
+                    remoteTeam.tokens.forEach((remoteToken, j) => {
+                        if (teams[i].tokens[j]) {
+                            teams[i].tokens[j].index = remoteToken.index;
+                            teams[i].tokens[j].location = remoteToken.location;
+                            teams[i].tokens[j].finished = remoteToken.finished;
+                            teams[i].tokens[j].shielded = remoteToken.shielded;
+                        }
+                    });
+                }
+            });
+
+            // 게임 진행 상태 업데이트
+            gameState.currentTeamIdx = data.currentTeamIdx;
+            gameState.step = data.step;
+            gameState.moveQueue = data.moveQueue || [];
+            gameState.traps = data.traps || [];
+
+            updateBoardVisuals();
+            updateTurnUI();
+            
+            // 이동 대기 중인 경우 UI 업데이트
+            if (gameState.step === 'MOVE' && gameState.moveQueue.length > 0) {
+                updateAvailableMovesUI();
+                renderTokenOptions();
+            }
         }
         function showMessage(msg, color) { 
             showToast(msg, "");
