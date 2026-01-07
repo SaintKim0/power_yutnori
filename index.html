@@ -2434,7 +2434,11 @@
             unreadCount = 0;
             updateChatBadge();
             resetChatTimer();
-            setTimeout(() => document.getElementById('chatInput').focus(), 300);
+            
+            // 키보드 팝업 방지를 위해 자동 포커스 제거 및 음성 인식 시작
+            if (!isRecording) {
+                startVoiceRecognition();
+            }
         }
 
         function resetChatTimer() {
@@ -2489,6 +2493,7 @@
             const container = document.getElementById('chatMessages');
             const msgDiv = document.createElement('div');
             msgDiv.className = `chat-bubble ${isMe ? 'me' : 'other'}`;
+            msgDiv.innerText = text; // 메시지 텍스트 추가
             
             if (!isMe) {
                 const nameWrapper = document.createElement('div');
