@@ -21,6 +21,8 @@
             --board-line-color: #8d6e63;
             --card-bg: rgba(255, 255, 255, 0.8);
             --glass-bg: rgba(255, 255, 255, 0.7);
+            --text-main: #1d1d1f;
+            --text-sub: #86868b;
         }
 
         body {
@@ -34,7 +36,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            color: #1d1d1f;
+            color: var(--text-main);
             overflow: hidden;
             touch-action: manipulation;
             -webkit-user-select: none;
@@ -289,7 +291,72 @@
             transition: cx 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), cy 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.2));
         }
+
+        /* 윷 던지기 애니메이션 */
+        @keyframes throwStick {
+            0% { transform: translateY(0) rotate(0) scale(1); }
+            50% { transform: translateY(-50px) rotate(180deg) scale(1.2); }
+            100% { transform: translateY(0) rotate(360deg) scale(1); }
+        }
+        .stick.throwing { animation: throwStick 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
         
+        /* 이모지 리액션 스타일 */
+        .emoji-reaction {
+            position: absolute;
+            font-size: 2.5rem;
+            pointer-events: none;
+            z-index: 1500;
+            animation: emojiFly 1.5s ease-out forwards;
+        }
+        @keyframes emojiFly {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+            20% { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -100px) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -150px) scale(0.8); opacity: 0; }
+        }
+        .emoji-picker {
+            display: flex; gap: 8px; justify-content: center; margin-top: 10px;
+            background: rgba(255,255,255,0.1); padding: 8px; border-radius: 20px;
+        }
+        .emoji-btn {
+            font-size: 1.5rem; cursor: pointer; transition: transform 0.2s;
+            background: none; border: none; padding: 5px;
+        }
+        .emoji-btn:active { transform: scale(1.3); }
+
+        /* 채팅 시스템 스타일 */
+        #chatOverlay {
+            position: fixed; bottom: 90px; right: -320px; width: 280px; height: 380px;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
+            z-index: 2500; transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column;
+            border-radius: 24px; border: 1px solid rgba(0,0,0,0.05); overflow: hidden;
+        }
+        #chatOverlay.active { right: 20px; }
+        .chat-header { padding: 12px 15px; background: var(--accent-color); color: white; font-weight: 800; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .chat-bubble { max-width: 90%; padding: 7px 11px; border-radius: 14px; font-size: 0.8rem; line-height: 1.4; word-break: break-all; position: relative; }
+        .chat-bubble.me { align-self: flex-end; background: var(--accent-color); color: white; border-bottom-right-radius: 2px; }
+        .chat-bubble.other { align-self: flex-start; background: #e5e5ea; color: #1d1d1f; border-bottom-left-radius: 2px; }
+        .chat-sender { font-size: 0.65rem; color: #86868b; margin-bottom: 2px; }
+        .chat-input-area { padding: 10px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; gap: 8px; }
+        .chat-input { flex: 1; padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; font-size: 0.85rem; outline: none; }
+        .chat-send-btn { background: var(--accent-color); color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: 700; cursor: pointer; }
+        
+        .btn-chat-toggle {
+            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
+            background: var(--accent-color); color: white; border-radius: 50%;
+            display: none; align-items: center; justify-content: center; font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,113,227,0.4); z-index: 2400; cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-chat-toggle:active { transform: scale(0.9); }
+        .chat-badge {
+            position: absolute; top: 0; right: 0; width: 18px; height: 18px;
+            background: #ff3b30; color: white; border-radius: 50%; font-size: 0.65rem;
+            display: none; align-items: center; justify-content: center; font-weight: 800;
+        }
+
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
@@ -328,13 +395,13 @@
             .btn-undo { background: #2c2c2e; color: #f5f5f7; border-color: rgba(255,255,255,0.1); }
         }
 
-        .result-text { font-size: 1rem; font-weight: 700; margin: 4px 0; color: #1d1d1f; height: 24px; letter-spacing: -0.01em;}
+        .result-text { font-size: 1rem; font-weight: 700; margin: 4px 0; color: var(--text-main); height: 24px; letter-spacing: -0.01em;}
         @media (prefers-color-scheme: dark) { .result-text { color: #f5f5f7; } }
-        .info-text { color: #86868b; font-size: 0.75rem; margin-bottom: 4px; }
+        .info-text { color: var(--text-sub); font-size: 0.75rem; margin-bottom: 4px; }
         
         .input-group { margin: 8px 0; text-align: left; background: rgba(0,0,0,0.03); padding: 12px; border-radius: 18px; flex: 1; }
         .input-row { display: flex; gap: 10px; width: 100%; }
-        .input-group label { font-weight: 600; display: block; margin-bottom: 4px; color: #3a3a3c; font-size: 0.8rem;}
+        .input-group label { font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-main); font-size: 0.8rem;}
         @media (prefers-color-scheme: dark) { .input-group label { color: #f5f5f7; } }
         .input-group input:not([type="checkbox"]),
         .input-group select { 
@@ -366,7 +433,7 @@
         }
         @media (prefers-color-scheme: dark) { .modal-content { background: rgba(28, 28, 30, 0.85); border: 1px solid rgba(255,255,255,0.1); color: #f5f5f7; } }
         .modal-title { font-size: 1.6rem; margin-bottom: 12px; font-weight: 800; color: var(--accent-color); letter-spacing: -0.02em; }
-        .modal-desc { font-size: 0.95rem; margin-bottom: 24px; color: #3a3a3c; line-height: 1.6; text-align: left; word-break: keep-all;}
+        .modal-desc { font-size: 0.95rem; margin-bottom: 24px; color: var(--text-main); line-height: 1.6; text-align: left; word-break: keep-all;}
         @media (prefers-color-scheme: dark) { .modal-desc { color: #f5f5f7; } }
         
         .toast-modal {
@@ -442,7 +509,7 @@
         }
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .profile-info { flex: 1; }
-        .profile-nickname { font-size: 1rem; font-weight: 800; color: #1d1d1f; margin: 0; }
+        .profile-nickname { font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0; }
         .profile-edit-label { font-size: 0.7rem; color: var(--accent-color); font-weight: 600; margin-top: 2px; }
         
         #profileModal .modal-content { padding: 25px; }
@@ -584,6 +651,15 @@
                 <button class="btn-primary" id="actionBtn" onclick="toggleThrow()" style="flex: 0 0 35%; padding: 12px 5px; font-size: 0.75rem;">던지기 (START)</button>
                 <button id="btnUndo" class="btn-undo" onclick="undoLastMove()">↩</button>
             </div>
+
+            <!-- 이모지 리액션 추가 -->
+            <div id="emojiPicker" class="emoji-picker" style="display: none; margin-top: 15px;">
+                <button class="emoji-btn" onclick="sendEmoji('😀')">😀</button>
+                <button class="emoji-btn" onclick="sendEmoji('😮')">😮</button>
+                <button class="emoji-btn" onclick="sendEmoji('👿')">👿</button>
+                <button class="emoji-btn" onclick="sendEmoji('🤣')">🤣</button>
+                <button class="emoji-btn" onclick="sendEmoji('👍')">👍</button>
+            </div>
         </div>
     </div>
 
@@ -680,6 +756,23 @@
     </div>
 
     <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; pointer-events:none; z-index:2000; display:none;"></canvas>
+    
+    <!-- 채팅 UI 추가 -->
+    <div id="chatOverlay">
+        <div class="chat-header">
+            <span>💬 메시지</span>
+            <button onclick="toggleChat()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+        </div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="메시지 입력..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button class="chat-send-btn" onclick="sendChatMessage()">전송</button>
+        </div>
+    </div>
+    <div id="btnChatToggle" class="btn-chat-toggle" onclick="toggleChat()">
+        💬
+        <div id="chatBadge" class="chat-badge">0</div>
+    </div>
     </div>
 
     <script>
@@ -1054,6 +1147,24 @@
                             }
                         });
                     }
+                } else if (data.type === 'emoji') {
+                    showEmoji(data.emoji, data.senderIdx);
+                    if (isHost) {
+                        connections.forEach(connItem => {
+                            if (connItem.peer !== c.peer && connItem.open) {
+                                connItem.send({ type: 'emoji', emoji: data.emoji, senderIdx: data.senderIdx });
+                            }
+                        });
+                    }
+                } else if (data.type === 'chat') {
+                    receiveChatMessage(data.text, data.senderName, data.senderIdx);
+                    if (isHost) {
+                        connections.forEach(connItem => {
+                            if (connItem.peer !== c.peer && connItem.open) {
+                                connItem.send({ type: 'chat', text: data.text, senderName: data.senderName, senderIdx: data.senderIdx });
+                            }
+                        });
+                    }
                 } else if (data.type === 'restartRequest') {
                     // 호스트가 요청을 받으면 요청한 클라이언트를 '수락' 상태로 기록
                     if (data.peerId) {
@@ -1208,6 +1319,10 @@
                         initGame(data.initialState);
                     } else if (data.type === 'action') {
                         handleRemoteAction(data.action);
+                    } else if (data.type === 'emoji') {
+                        showEmoji(data.emoji, data.senderIdx);
+                    } else if (data.type === 'chat') {
+                        receiveChatMessage(data.text, data.senderName, data.senderIdx);
                     } else if (data.type === 'sync') {
                         applySyncState(data);
                     } else if (data.type === 'restartRequest') {
@@ -1492,6 +1607,16 @@
 
             document.getElementById('setupArea').style.display = 'none'; 
             document.getElementById('gameWrapper').style.display = 'flex';
+            
+            // 온라인 대전 시 이모지 피커 및 채팅 버튼 표시
+            if (isOnlineMode) {
+                document.getElementById('emojiPicker').style.display = 'flex';
+                document.getElementById('btnChatToggle').style.display = 'flex';
+            } else {
+                document.getElementById('emojiPicker').style.display = 'none';
+                document.getElementById('btnChatToggle').style.display = 'none';
+            }
+            
             if (isPowerUpMode) { 
                 document.getElementById('skillArea').style.display = 'flex'; 
                 document.getElementById('spDisplay').style.display = 'inline'; 
@@ -1558,39 +1683,57 @@
 
         function processYutResult(results, flatCount, moveId = null) {
             updateSticks(results);
-            let score = 0, text = "", isBackDo = false;
-            switch(flatCount) {
-                case 1: if (results[3]) { text = "백도"; score = -1; isBackDo = true; } else { text = "도"; score = 1; } break;
-                case 2: text="개"; score=2; break;
-                case 3: text="걸"; score=3; break;
-                case 4: text="윷"; score=4; break;
-                case 0: text="모"; score=5; break;
-            }
-            const resultText = `${isBackDo ? '🔙' : '🎉'} ${text}!`;
-            showToast(resultText, "이동할 말을 선택하세요.");
             
-            const finalMoveId = moveId || Date.now();
-            gameState.moveQueue.push({ id: finalMoveId, score, text });
-            
-            if (!teams[gameState.currentTeamIdx].isAi && (score >= 4)) GameStats.currentSession.yutMoCount++;
-            if (score >= 4) SoundEffect.playGoodThrow(); else SoundEffect.playYutThrow();
-            if (score >= 4) { 
-                document.getElementById('subResult').innerText = "윷/모! 한 번 더!"; 
-                setTimeout(() => { 
-                    if (!teams[gameState.currentTeamIdx].isAi) {
-                        if (!isOnlineMode || gameState.currentTeamIdx === myTeamIdx) {
-                            document.getElementById('actionBtn').disabled = false; 
-                            document.getElementById('actionBtn').innerText = "던지기 (한번 더!)"; 
+            // 윷 애니메이션(0.6초) + 여유 시간(0.5초) 후 결과 표시
+            setTimeout(() => {
+                let score = 0, text = "", isBackDo = false;
+                switch(flatCount) {
+                    case 1: if (results[3]) { text = "백도"; score = -1; isBackDo = true; } else { text = "도"; score = 1; } break;
+                    case 2: text="개"; score=2; break;
+                    case 3: text="걸"; score=3; break;
+                    case 4: text="윷"; score=4; break;
+                    case 0: text="모"; score=5; break;
+                }
+                const resultText = `${isBackDo ? '🔙' : '🎉'} ${text}!`;
+                showToast(resultText, "이동할 말을 선택하세요.");
+                
+                const finalMoveId = moveId || Date.now();
+                gameState.moveQueue.push({ id: finalMoveId, score, text });
+                
+                if (!teams[gameState.currentTeamIdx].isAi && (score >= 4)) GameStats.currentSession.yutMoCount++;
+                if (score >= 4) SoundEffect.playGoodThrow(); else SoundEffect.playYutThrow();
+                
+                if (score >= 4) { 
+                    document.getElementById('subResult').innerText = "윷/모! 한 번 더!"; 
+                    setTimeout(() => { 
+                        if (!teams[gameState.currentTeamIdx].isAi) {
+                            if (!isOnlineMode || gameState.currentTeamIdx === myTeamIdx) {
+                                document.getElementById('actionBtn').disabled = false; 
+                                document.getElementById('actionBtn').innerText = "던지기 (한번 더!)"; 
+                            }
                         }
-                    }
-                    updateAvailableMovesUI(); 
-                    maybeTriggerAi(); 
-                }, 1000); 
-            }
-            else { document.getElementById('subResult').innerText = "말을 선택하세요."; setTimeout(prepareMoveStep, 800); }
+                        updateAvailableMovesUI(); 
+                        maybeTriggerAi(); 
+                    }, 1000); 
+                }
+                else { 
+                    document.getElementById('subResult').innerText = "말을 선택하세요."; 
+                    setTimeout(prepareMoveStep, 800); 
+                }
+            }, 1100);
         }
 
-        function updateSticks(res) { for(let i=0; i<4; i++) { sticks[i].className = 'stick' + (res[i] ? ' flat' : ' round'); if (i === 3) sticks[i].classList.add('back-do-mark'); } }
+        function updateSticks(res) { 
+            for(let i=0; i<4; i++) { 
+                sticks[i].className = 'stick' + (res[i] ? ' flat' : ' round'); 
+                if (i === 3) sticks[i].classList.add('back-do-mark');
+                
+                // 애니메이션 트리거를 위해 클래스 잠시 제거 후 추가
+                sticks[i].classList.remove('throwing');
+                void sticks[i].offsetWidth; // 리플로우 강제
+                sticks[i].classList.add('throwing');
+            } 
+        }
         function prepareMoveStep() { gameState.step = 'MOVE'; document.getElementById('gaugeArea').style.display = 'none'; document.getElementById('moveArea').style.display = 'block'; updateAvailableMovesUI(); if (gameState.moveQueue.length > 0 && !gameState.selectedMoveId) selectMove(gameState.moveQueue[0].id); else if (gameState.moveQueue.length === 0) nextTurn(); maybeTriggerAi(); }
         function updateAvailableMovesUI() { document.getElementById('availableMoves').innerHTML = ""; gameState.moveQueue.forEach(m => { const c = document.createElement('div'); c.className = 'move-chip' + (m.score === -1 ? ' back-do' : '') + (m.id === gameState.selectedMoveId ? ' selected' : ''); c.innerText = m.text; c.onclick = () => { if (gameState.step === 'MOVE') { SoundEffect.playClick(); selectMove(m.id); } }; document.getElementById('availableMoves').appendChild(c); }); }
         function selectMove(id) { gameState.selectedMoveId = id; updateAvailableMovesUI(); renderTokenOptions(); }
@@ -1656,9 +1799,18 @@
                             }
                         });
                     });
-                    if (actualCatch) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 잡았다! 한 번 더!", "#ff3b30"); }
+                    if (actualCatch) { 
+                        shakeBoard(); 
+                        SoundEffect.playCatch(); 
+                        showMessage("🎯 잡았다! 한 번 더!", "#ff3b30"); 
+                        fireConfetti(true); // 잡았을 때 팡파레 추가
+                    }
                 }
-                if (toMove.some(t => t.finished)) { SoundEffect.playGoodThrow(); showMessage("🏁 완주 성공!", "#0071e3"); }
+                if (toMove.some(t => t.finished)) { 
+                    SoundEffect.playGoodThrow(); 
+                    showMessage("🏁 완주 성공!", "#0071e3");
+                    fireConfetti(true); // 완주했을 때 팡파레 추가
+                }
             }
             updateBoardVisuals(); if (checkWin()) return;
             if (team.remainingUndos > 0 && !isOnlineMode) { 
@@ -1764,7 +1916,13 @@
                             }
                         });
                     });
-                    if (c) { shakeBoard(); SoundEffect.playCatch(); showMessage("🎯 부스트 잡기! 한 번 더!", "#ff3b30"); gameState.step = 'THROW'; }
+                    if (c) { 
+                        shakeBoard(); 
+                        SoundEffect.playCatch(); 
+                        showMessage("🎯 부스트 잡기! 한 번 더!", "#ff3b30"); 
+                        fireConfetti(true); // 부스트 잡기 시 팡파레
+                        gameState.step = 'THROW'; 
+                    }
                     else showMessage(`${team.name}: ⚡ 부스트!`, "#0071e3");
                 }
             }
@@ -1975,7 +2133,50 @@
         function closeStats() { SoundEffect.playClick(); document.getElementById('statsModal').style.display = 'none'; }
         function shakeBoard() { const b = document.querySelector('.board-section'); b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); }
         function checkWin() { const team = teams[gameState.currentTeamIdx]; if (team.tokens.every(t => t.finished)) { gameState.step = 'END'; SoundEffect.playWin(); document.getElementById('winTitle').innerText = `${team.name} 승리!`; document.getElementById('winTitle').style.color = team.color; GameStats.recordGameEnd(gameMode==='ai'?!team.isAi:true); document.getElementById('winModal').style.display = 'flex'; fireConfetti(); return true; } return false; }
-        function fireConfetti() { const canvas = document.getElementById('confettiCanvas'); canvas.style.display = 'block'; const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; const pieces = [], colors = ['#0071e3', '#ff3b30', '#34c759', '#ffcc00', '#af52de', '#ff9500']; for(let i=0; i<150; i++) pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height-canvas.height, color: colors[i%colors.length], size: Math.random()*8+4, speedY: Math.random()*3+2, speedX: Math.random()*2-1, rot: Math.random()*360, rotS: Math.random()*10-5 }); function anim() { if (gameState.step !== 'END') return; ctx.clearRect(0,0,canvas.width,canvas.height); pieces.forEach(p => { p.y += p.speedY; p.x += p.speedX; p.rot += p.rotS; if (p.y > canvas.height) { p.y = -20; p.x = Math.random()*canvas.width; } ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle = p.color; ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size); ctx.restore(); }); requestAnimationFrame(anim); } anim(); }
+        function fireConfetti(isShort = false) {
+            const canvas = document.getElementById('confettiCanvas');
+            canvas.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const pieces = [], colors = ['#0071e3', '#ff3b30', '#34c759', '#ffcc00', '#af52de', '#ff9500'];
+            const count = isShort ? 60 : 150;
+            
+            for(let i=0; i<count; i++) pieces.push({ 
+                x: Math.random()*canvas.width, 
+                y: isShort ? Math.random()*canvas.height : Math.random()*canvas.height-canvas.height, 
+                color: colors[i%colors.length], 
+                size: Math.random()*8+4, 
+                speedY: Math.random()*3+2, 
+                speedX: Math.random()*2-1, 
+                rot: Math.random()*360, 
+                rotS: Math.random()*10-5,
+                opacity: 1
+            });
+            
+            const startTime = Date.now();
+            function anim() {
+                if (gameState.step !== 'END' && !isShort) { canvas.style.display = 'none'; return; }
+                const elapsed = Date.now() - startTime;
+                if (isShort && elapsed > 2000) { canvas.style.display = 'none'; return; }
+                
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                pieces.forEach(p => {
+                    p.y += p.speedY; p.x += p.speedX; p.rot += p.rotS;
+                    if (isShort) p.opacity = Math.max(0, 1 - (elapsed / 2000));
+                    if (p.y > canvas.height && !isShort) { p.y = -20; p.x = Math.random()*canvas.width; }
+                    ctx.save();
+                    ctx.globalAlpha = p.opacity;
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot*Math.PI/180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+                });
+                requestAnimationFrame(anim);
+            }
+            anim();
+        }
         function undoLastMove() { 
             if (isOnlineMode) return; // 온라인 모드에서는 무르기 기능을 제한합니다 (동기화 이슈 방지)
             if (!historyState) return; 
@@ -2184,6 +2385,137 @@
             }
         }
         function createDot(cx, cy, id) { const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 7); c.setAttribute("class", "board-dot" + (id===0?' start':(id==='center'?' center':([5,10,15].includes(id)?' corner':'')))); document.getElementById('boardDots').appendChild(c); }
+        
+        // --- 시각적 연출 및 UX 강화 함수 ---
+        function sendEmoji(emoji) {
+            if (isOnlineMode) {
+                const data = { type: 'emoji', emoji, senderIdx: myTeamIdx };
+                if (isHost) broadcast(data); else sendToHost(data);
+            }
+            showEmoji(emoji, myTeamIdx);
+        }
+
+        function showEmoji(emoji, teamIdx) {
+            const reaction = document.createElement('div');
+            reaction.className = 'emoji-reaction';
+            reaction.innerText = emoji;
+            
+            // 화면 중앙에서 약간 위쪽에서 시작하여 날아오름
+            reaction.style.left = '50%';
+            reaction.style.top = '60%';
+            document.body.appendChild(reaction);
+            
+            setTimeout(() => reaction.remove(), 1500);
+            SoundEffect.playClick();
+        }
+
+        // --- 메신저(채팅) 기능 함수 ---
+        let unreadCount = 0;
+        let chatHideTimer = null;
+
+        function toggleChat() {
+            const overlay = document.getElementById('chatOverlay');
+            if (overlay.classList.contains('active')) {
+                overlay.classList.remove('active');
+                if (chatHideTimer) clearTimeout(chatHideTimer);
+            } else {
+                openChat();
+            }
+            SoundEffect.playClick();
+        }
+
+        function openChat() {
+            const overlay = document.getElementById('chatOverlay');
+            overlay.classList.add('active');
+            unreadCount = 0;
+            updateChatBadge();
+            resetChatTimer();
+            setTimeout(() => document.getElementById('chatInput').focus(), 300);
+        }
+
+        function resetChatTimer() {
+            if (chatHideTimer) clearTimeout(chatHideTimer);
+            chatHideTimer = setTimeout(() => {
+                const overlay = document.getElementById('chatOverlay');
+                const input = document.getElementById('chatInput');
+                // 입력창에 포커스가 없을 때만 자동으로 닫기
+                if (document.activeElement !== input) {
+                    overlay.classList.remove('active');
+                } else {
+                    // 포커스가 있다면 3초 뒤에 다시 체크
+                    resetChatTimer();
+                }
+            }, 5000); // 5초 후 자동 숨김
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const senderName = ProfileManager.data.nickname || "플레이어";
+            const data = { type: 'chat', text, senderName, senderIdx: myTeamIdx };
+            
+            if (isOnlineMode) {
+                if (isHost) broadcast(data); else sendToHost(data);
+            }
+            
+            appendChatMessage(text, senderName, true);
+            input.value = "";
+            resetChatTimer();
+        }
+
+        function receiveChatMessage(text, senderName, senderIdx) {
+            appendChatMessage(text, senderName, false);
+            
+            const overlay = document.getElementById('chatOverlay');
+            if (!overlay.classList.contains('active')) {
+                unreadCount++;
+                updateChatBadge();
+                showToast("새 메시지", `${senderName}: ${text.substring(0, 10)}${text.length > 10 ? '...' : ''}`);
+                
+                // 메시지 수신 시 자동으로 잠깐 보여주기
+                openChat();
+            } else {
+                resetChatTimer();
+            }
+        }
+
+        function appendChatMessage(text, senderName, isMe) {
+            const container = document.getElementById('chatMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-bubble ${isMe ? 'me' : 'other'}`;
+            
+            if (!isMe) {
+                const nameWrapper = document.createElement('div');
+                nameWrapper.style.display = 'flex';
+                nameWrapper.style.flexDirection = 'column';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'chat-sender';
+                nameDiv.innerText = senderName;
+                nameWrapper.appendChild(nameDiv);
+                nameWrapper.appendChild(msgDiv);
+                container.appendChild(nameWrapper);
+            } else {
+                container.appendChild(msgDiv);
+            }
+            
+            // 자동 스크롤
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function updateChatBadge() {
+            const badge = document.getElementById('chatBadge');
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount > 9 ? "9+" : unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        // ------------------------------
+
         const sticks = document.getElementById('yutContainer').children;
         initSetup();
 
